@@ -1,7 +1,7 @@
-From 4a1235321c3749726d4f0b3ed0f0769a40d714f9 Mon Sep 17 00:00:00 2001
+From a66ccda34dd319ce19255a029b746362d5773d31 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Mon, 22 Oct 2018 22:34:13 +0200
-Subject: [PATCH 03/14] Adapt to Gentoo-specific /etc/mail/aliases
+Subject: [PATCH 02/12] Adapt to Gentoo-specific /etc/mail/aliases
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit

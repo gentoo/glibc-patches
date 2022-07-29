@@ -1,7 +1,7 @@
-From 6f332b192b1e0a502d904c608630e3392dd69d15 Mon Sep 17 00:00:00 2001
+From 68476d32783ea64c21bbd6d166a69fa881a3f22b Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Fri, 14 Dec 2018 20:43:04 +0100
-Subject: [PATCH 04/14] Force -O0 in conform tests to survive $CC changes
+Subject: [PATCH 03/12] Force -O0 in conform tests to survive $CC changes
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit

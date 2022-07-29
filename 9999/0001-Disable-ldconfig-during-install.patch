@@ -1,7 +1,7 @@
-From 4ec3b3446cac3917499fba2c3067dc39bb24bf83 Mon Sep 17 00:00:00 2001
+From 4917be423cb1a70a66e90e39a73e986b011d7687 Mon Sep 17 00:00:00 2001
 From: Mike Frysinger <vapier@gentoo.org>
 Date: Tue, 3 Aug 2021 00:34:59 +0200
-Subject: [PATCH 01/14] Disable ldconfig during install
+Subject: [PATCH 01/12] Disable ldconfig during install
 
 Do not bother running ldconfig on DESTDIR.  It's a waste of time as we
 won't use the result (portage will rebuild the cache after install).
@@ -15,7 +15,7 @@ https://bugs.gentoo.org/431038
  1 file changed, 1 insertion(+)
 
 diff --git a/Makefile b/Makefile
-index b1454882bd..73c3ef1e76 100644
+index 179dd478ff..763d6a084a 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -110,6 +110,7 @@ elf/ldso_install:
