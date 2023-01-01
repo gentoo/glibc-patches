@@ -1,7 +1,7 @@
-From 7a72e18a7b710feea5375578450e11a106336102 Mon Sep 17 00:00:00 2001
+From c71a60022adc7c9b7e37a813e2abad0d0724245a Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
 Date: Tue, 20 Oct 2020 16:00:43 -0300
-Subject: [PATCH 10/12] linux: Use getdents64 on readdir64 compat
+Subject: [PATCH 09/10] linux: Use getdents64 on readdir64 compat
  implementation
 
 It uses a similar strategy from the non-LFS readdir that also
@@ -12,11 +12,11 @@ It allows to remove __old_getdents64.
 
 Checked on i686-linux-gnu.
 ---
- sysdeps/unix/sysv/linux/getdents64.c |  93 ------------------------
- sysdeps/unix/sysv/linux/olddirent.h  |   2 -
- sysdeps/unix/sysv/linux/opendir.c    |  15 +++-
- sysdeps/unix/sysv/linux/readdir64.c  | 104 +++++++++++++++++----------
- 4 files changed, 79 insertions(+), 135 deletions(-)
+ sysdeps/unix/sysv/linux/getdents64.c | 93 ----------------------------
+ sysdeps/unix/sysv/linux/olddirent.h  |  2 -
+ sysdeps/unix/sysv/linux/opendir.c    | 15 ++++-
+ sysdeps/unix/sysv/linux/readdir64.c  | 62 +++++++++++++++----
+ 4 files changed, 64 insertions(+), 108 deletions(-)
 
 diff --git a/sysdeps/unix/sysv/linux/getdents64.c b/sysdeps/unix/sysv/linux/getdents64.c
 index 510a586859..92481526c5 100644
@@ -167,10 +167,10 @@ index 9a0b7ab4c4..df40b0a64e 100644
    dirp->tbuffer = malloc (tbuffer_size);
    if (dirp->tbuffer == NULL)
 diff --git a/sysdeps/unix/sysv/linux/readdir64.c b/sysdeps/unix/sysv/linux/readdir64.c
-index dbf6a8c54d..4b41299c6c 100644
+index bbe247f95d..01e834e238 100644
 --- a/sysdeps/unix/sysv/linux/readdir64.c
 +++ b/sysdeps/unix/sysv/linux/readdir64.c
-@@ -99,57 +99,83 @@ versioned_symbol (libc, __readdir64, readdir64, GLIBC_2_2);
+@@ -102,21 +102,52 @@ versioned_symbol (libc, __readdir64, readdir64, GLIBC_2_2);
  # if SHLIB_COMPAT(libc, GLIBC_2_1, GLIBC_2_2)
  #  include <olddirent.h>
  
@@ -218,68 +218,36 @@ index dbf6a8c54d..4b41299c6c 100644
 -  int saved_errno = errno;
 +  const int saved_errno = errno;
  
--  do
-+  if (dirp->offset >= dirp->size)
+   if (dirp->offset >= dirp->size)
      {
--      size_t reclen;
+       /* We've emptied out our buffer.  Refill it.  */
 -
--      if (dirp->offset >= dirp->size)
-+      /* We've emptied out our buffer.  Refill it.  */
+-      size_t maxread = dirp->allocation;
+-      ssize_t bytes;
+-
+-      bytes = __old_getdents64 (dirp->fd, dirp->data, maxread);
 +      ssize_t bytes = __getdents64 (dirp->fd, dirp->data, dirp->allocation);
-+      if (bytes <= 0)
+       if (bytes <= 0)
  	{
--	  /* We've emptied out our buffer.  Refill it.  */
--
--	  size_t maxread = dirp->allocation;
--	  ssize_t bytes;
--
--	  bytes = __old_getdents64 (dirp->fd, dirp->data, maxread);
--	  if (bytes <= 0)
--	    {
--	      /* On some systems getdents fails with ENOENT when the
--		 open directory has been rmdir'd already.  POSIX.1
--		 requires that we treat this condition like normal EOF.  */
--	      if (bytes < 0 && errno == ENOENT)
--		bytes = 0;
--
--	      /* Don't modifiy errno when reaching EOF.  */
--	      if (bytes == 0)
--		__set_errno (saved_errno);
--	      dp = NULL;
--	      break;
--	    }
--	  dirp->size = (size_t) bytes;
--
--	  /* Reset the offset into the buffer.  */
--	  dirp->offset = 0;
--	}
--
--      dp = (struct __old_dirent64 *) &dirp->data[dirp->offset];
-+	  /* On some systems getdents fails with ENOENT when the
-+	     open directory has been rmdir'd already.  POSIX.1
-+	     requires that we treat this condition like normal EOF.  */
-+	  if (bytes < 0 && errno == ENOENT)
-+	    bytes = 0;
- 
--      reclen = dp->d_reclen;
-+	  /* Don't modifiy errno when reaching EOF.  */
-+	  if (bytes == 0)
-+	    __set_errno (saved_errno);
-+	  return NULL;
-+	}
+ 	  /* Linux may fail with ENOENT on some file systems if the
+@@ -127,17 +158,24 @@ __old_readdir64_unlocked (DIR *dirp)
+ 	    __set_errno (saved_errno);
+ 	  return NULL;
+ 	}
+-      dirp->size = (size_t) bytes;
 +      dirp->size = bytes;
  
--      dirp->offset += reclen;
-+      /* Reset the offset into the buffer.  */
-+      dirp->offset = 0;
-+    }
+       /* Reset the offset into the buffer.  */
+       dirp->offset = 0;
+     }
  
--      dirp->filepos = dp->d_off;
+-  dp = (struct __old_dirent64 *) &dirp->data[dirp->offset];
+-  dirp->offset += dp->d_reclen;
+-  dirp->filepos = dp->d_off;
 +  struct dirent64 *dp64 = (struct dirent64 *) &dirp->data[dirp->offset];
 +  dirp->offset += dp64->d_reclen;
  
--      /* Skip deleted files.  */
--    } while (dp->d_ino == 0);
+-  return dp;
 +  /* Skip entries which might overflow d_ino or for memory allocation failure
 +     in case of large file names.  */
 +  if (dirstream_old_entry (dirp, dp64))
@@ -287,12 +255,11 @@ index dbf6a8c54d..4b41299c6c 100644
 +      dirp->filepos = dp64->d_off;
 +      return (struct __old_dirent64 *) dirp->tbuffer;
 +    }
- 
--  return dp;
++
 +  return NULL;
  }
  
  attribute_compat_text_section
 -- 
-2.35.1
+2.38.2
 

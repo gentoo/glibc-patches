@@ -1,7 +1,7 @@
-From 5e92232132d809ca1a4dde473e3b9d061754db90 Mon Sep 17 00:00:00 2001
+From 0718c1ca37fe6407bd4bad15dfae873719eabb6e Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
 Date: Tue, 20 Oct 2020 13:37:15 -0300
-Subject: [PATCH 06/12] linux: Use getdents64 on non-LFS readdir
+Subject: [PATCH 05/10] linux: Use getdents64 on non-LFS readdir
 
 The opendir allocates a translation buffer to be used to return the
 non-LFS readdir entry.  The obtained dirent64 struct is translated
@@ -15,8 +15,8 @@ Checked on x86_64-linux-gnu and i686-linux-gnu.
  sysdeps/unix/sysv/linux/closedir.c  |  4 ++
  sysdeps/unix/sysv/linux/dirstream.h |  5 ++
  sysdeps/unix/sysv/linux/opendir.c   | 21 +++++++
- sysdeps/unix/sysv/linux/readdir.c   | 97 +++++++++++++++++++++--------
- 4 files changed, 101 insertions(+), 26 deletions(-)
+ sysdeps/unix/sysv/linux/readdir.c   | 94 +++++++++++++++++++++--------
+ 4 files changed, 98 insertions(+), 26 deletions(-)
 
 diff --git a/sysdeps/unix/sysv/linux/closedir.c b/sysdeps/unix/sysv/linux/closedir.c
 index eee0193fc4..d876d49d78 100644
@@ -82,10 +82,10 @@ index 9e81d00630..bfd2f382a6 100644
  #if IS_IN (libc)
    __libc_lock_init (dirp->lock);
 diff --git a/sysdeps/unix/sysv/linux/readdir.c b/sysdeps/unix/sysv/linux/readdir.c
-index 7743f50071..7b4571839e 100644
+index c9a04dc160..c078146d7d 100644
 --- a/sysdeps/unix/sysv/linux/readdir.c
 +++ b/sysdeps/unix/sysv/linux/readdir.c
-@@ -21,42 +21,87 @@
+@@ -21,42 +21,84 @@
  #if !_DIRENT_MATCHES_DIRENT64
  #include <dirstream.h>
  
@@ -131,39 +131,31 @@ index 7743f50071..7b4571839e 100644
  struct dirent *
  __readdir_unlocked (DIR *dirp)
  {
-   const int saved_errno = errno;
+-  struct dirent *dp;
+   int saved_errno = errno;
  
 -  if (dirp->offset >= dirp->size)
 +  while (1)
      {
 -      /* We've emptied out our buffer.  Refill it.  */
--      ssize_t bytes = __getdents (dirp->fd, dirp->data, dirp->allocation);
+-
+-      size_t maxread = dirp->allocation;
+-      ssize_t bytes;
+-
+-      bytes = __getdents (dirp->fd, dirp->data, maxread);
 -      if (bytes <= 0)
 +      if (dirp->offset >= dirp->size)
- 	{
--	  /* On some systems getdents fails with ENOENT when the
--	     open directory has been rmdir'd already.  POSIX.1
--	     requires that we treat this condition like normal EOF.  */
--	  if (bytes < 0 && errno == ENOENT)
--	    bytes = 0;
--
--	  /* Don't modifiy errno when reaching EOF.  */
--	  if (bytes == 0)
--	    __set_errno (saved_errno);
--	  return NULL;
++	{
 +	  /* We've emptied out our buffer.  Refill it.  */
 +	  ssize_t bytes = __getdents64 (dirp->fd, dirp->data,
 +					dirp->allocation);
 +	  if (bytes <= 0)
 +	    {
-+	      /* On some systems getdents fails with ENOENT when the
-+		 open directory has been rmdir'd already.  POSIX.1
-+		 requires that we treat this condition like normal EOF.  */
++	      /* Linux may fail with ENOENT on some file systems if the
++		 directory inode is marked as dead (deleted).  POSIX
++		 treats this as a regular end-of-directory condition, so
++		 do not set errno in that case, to indicate success.  */
 +	      if (bytes < 0 && errno == ENOENT)
-+		bytes = 0;
-+
-+	      /* Don't modifiy errno when reaching EOF.  */
-+	      if (bytes == 0)
 +		__set_errno (saved_errno);
 +	      return NULL;
 +	    }
@@ -179,20 +171,25 @@ index 7743f50071..7b4571839e 100644
 +      /* Skip entries which might overflow d_off/d_ino or if the translation
 +	 buffer can't be resized.  */
 +      if (dirstream_entry (dirp, dp64))
-+	{
+ 	{
+-	  /* Linux may fail with ENOENT on some file systems if the
+-	     directory inode is marked as dead (deleted).  POSIX
+-	     treats this as a regular end-of-directory condition, so
+-	     do not set errno in that case, to indicate success.  */
+-	  if (bytes == 0 || errno == ENOENT)
+-	    __set_errno (saved_errno);
+-	  return NULL;
 +          dirp->filepos = dp64->d_off;
 +	  return (struct dirent *) dirp->tbuffer;
  	}
--      dirp->size = bytes;
+-      dirp->size = (size_t) bytes;
 -
 -      /* Reset the offset into the buffer.  */
 -      dirp->offset = 0;
      }
 -
--  struct dirent *dp = (struct dirent *) &dirp->data[dirp->offset];
--
+-  dp = (struct dirent *) &dirp->data[dirp->offset];
 -  dirp->offset += dp->d_reclen;
--
 -  dirp->filepos = dp->d_off;
 -
 -  return dp;
@@ -200,5 +197,5 @@ index 7743f50071..7b4571839e 100644
  
  struct dirent *
 -- 
-2.35.1
+2.38.2
 

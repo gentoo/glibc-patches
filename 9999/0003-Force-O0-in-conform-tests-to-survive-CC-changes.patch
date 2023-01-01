@@ -1,7 +1,7 @@
-From 68476d32783ea64c21bbd6d166a69fa881a3f22b Mon Sep 17 00:00:00 2001
+From f44c6c3768c2a3ef274782a2e308fb6b8fe84499 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Fri, 14 Dec 2018 20:43:04 +0100
-Subject: [PATCH 03/12] Force -O0 in conform tests to survive $CC changes
+Subject: [PATCH 03/10] Force -O0 in conform tests to survive $CC changes
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -61,5 +61,5 @@ index f7fe3a7a0a..ad87fd2a6d 100644
                                                    args.header)
      with tempfile.TemporaryDirectory() as temp_dir:
 -- 
-2.35.1
+2.38.2
 

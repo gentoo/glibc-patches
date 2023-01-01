@@ -1,7 +1,7 @@
-From a66ccda34dd319ce19255a029b746362d5773d31 Mon Sep 17 00:00:00 2001
+From ab1ca71990a972e375709711f5fa268010505324 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Mon, 22 Oct 2018 22:34:13 +0200
-Subject: [PATCH 02/12] Adapt to Gentoo-specific /etc/mail/aliases
+Subject: [PATCH 02/10] Adapt to Gentoo-specific /etc/mail/aliases
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -10,6 +10,7 @@ Patch by pacho2
 
 Signed-off-by: Andreas K. Hüttel <dilfridge@gentoo.org>
 (cherry picked from commit 4e616cda056f471b799beba2b1cedc787ad4ecc0)
+Signed-off-by: Andreas K. Hüttel <dilfridge@gentoo.org>
 ---
  nss/nss_files/files-alias.c    |  2 +-
  nss/tst-nss-files-alias-leak.c | 18 +++++++++---------
@@ -104,5 +105,5 @@ index 4bf6fe0834..1548eba2ad 100644
    /* valgrind needs a temporary directory in the chroot.  */
    {
 -- 
-2.35.1
+2.38.2
 
