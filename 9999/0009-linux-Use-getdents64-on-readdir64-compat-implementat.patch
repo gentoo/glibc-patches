@@ -1,8 +1,7 @@
-From c71a60022adc7c9b7e37a813e2abad0d0724245a Mon Sep 17 00:00:00 2001
+From b1ab50b1c7f17d6b38c1e3a665cca971ba16deab Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
-Date: Tue, 20 Oct 2020 16:00:43 -0300
-Subject: [PATCH 09/10] linux: Use getdents64 on readdir64 compat
- implementation
+Date: Fri, 27 Jan 2023 14:28:34 -0300
+Subject: [PATCH 9/9] linux: Use getdents64 on readdir64 compat implementation
 
 It uses a similar strategy from the non-LFS readdir that also
 uses getdents64 internally and uses a translation buffer to return
@@ -12,14 +11,45 @@ It allows to remove __old_getdents64.
 
 Checked on i686-linux-gnu.
 ---
+ sysdeps/unix/sysv/linux/dirstream.h  | 13 +++-
  sysdeps/unix/sysv/linux/getdents64.c | 93 ----------------------------
  sysdeps/unix/sysv/linux/olddirent.h  |  2 -
- sysdeps/unix/sysv/linux/opendir.c    | 15 ++++-
- sysdeps/unix/sysv/linux/readdir64.c  | 62 +++++++++++++++----
- 4 files changed, 64 insertions(+), 108 deletions(-)
+ sysdeps/unix/sysv/linux/readdir64.c  | 50 +++++++++++----
+ 4 files changed, 50 insertions(+), 108 deletions(-)
 
+diff --git a/sysdeps/unix/sysv/linux/dirstream.h b/sysdeps/unix/sysv/linux/dirstream.h
+index 8f58a1c3a6..b03ece4590 100644
+--- a/sysdeps/unix/sysv/linux/dirstream.h
++++ b/sysdeps/unix/sysv/linux/dirstream.h
+@@ -24,6 +24,11 @@
+ #include <libc-lock.h>
+ #include <telldir.h>
+ 
++#include <shlib-compat.h>
++#if SHLIB_COMPAT(libc, GLIBC_2_1, GLIBC_2_2)
++# include <olddirent.h>
++#endif
++
+ /* Directory stream type.
+ 
+    The miscellaneous Unix `readdir' implementations read directory data
+@@ -44,7 +49,13 @@ struct __dirstream
+     int errcode;		/* Delayed error code.  */
+ 
+ #if !defined __OFF_T_MATCHES_OFF64_T || !defined __INO_T_MATCHES_INO64_T
+-    struct dirent tdp;
++    union
++      {
++        struct dirent tdp;
++#if  SHLIB_COMPAT(libc, GLIBC_2_1, GLIBC_2_2)
++        struct __old_dirent64 tdp64;
++#    endif
++      };
+ #endif
+ #if _DIRENT_OFFSET_TRANSLATION
+     struct dirstream_loc_t locs; /* off64_t to long int map for telldir.  */
 diff --git a/sysdeps/unix/sysv/linux/getdents64.c b/sysdeps/unix/sysv/linux/getdents64.c
-index 510a586859..92481526c5 100644
+index 01c3517deb..db299864ed 100644
 --- a/sysdeps/unix/sysv/linux/getdents64.c
 +++ b/sysdeps/unix/sysv/linux/getdents64.c
 @@ -36,97 +36,4 @@ weak_alias (__getdents64, getdents64)
@@ -121,7 +151,7 @@ index 510a586859..92481526c5 100644
 -# endif /* SHLIB_COMPAT(libc, GLIBC_2_1, GLIBC_2_2)  */
  #endif /* _DIRENT_MATCHES_DIRENT64  */
 diff --git a/sysdeps/unix/sysv/linux/olddirent.h b/sysdeps/unix/sysv/linux/olddirent.h
-index 00c84b9521..68aafd7c02 100644
+index cde95e192e..2d682a6919 100644
 --- a/sysdeps/unix/sysv/linux/olddirent.h
 +++ b/sysdeps/unix/sysv/linux/olddirent.h
 @@ -36,8 +36,6 @@ extern struct __old_dirent64 *__old_readdir64_unlocked (DIR *__dirp)
@@ -133,44 +163,11 @@ index 00c84b9521..68aafd7c02 100644
  int __old_scandir64 (const char * __dir,
  		     struct __old_dirent64 *** __namelist,
  		     int (*__selector) (const struct __old_dirent64 *),
-diff --git a/sysdeps/unix/sysv/linux/opendir.c b/sysdeps/unix/sysv/linux/opendir.c
-index 9a0b7ab4c4..df40b0a64e 100644
---- a/sysdeps/unix/sysv/linux/opendir.c
-+++ b/sysdeps/unix/sysv/linux/opendir.c
-@@ -23,6 +23,11 @@
- 
- #include <not-cancel.h>
- 
-+#include <shlib-compat.h>
-+#if SHLIB_COMPAT(libc, GLIBC_2_1, GLIBC_2_2)
-+# include <olddirent.h>
-+#endif
-+
- enum {
-   opendir_oflags = O_RDONLY|O_NDELAY|O_DIRECTORY|O_LARGEFILE|O_CLOEXEC
- };
-@@ -128,7 +133,15 @@ __alloc_dir (int fd, bool close_fd, int flags,
-      expand the buffer if required.  */
-   enum
-     {
--      tbuffer_size = sizeof (struct dirent) + NAME_MAX + 1
-+      tbuffer_size =
-+# if SHLIB_COMPAT(libc, GLIBC_2_1, GLIBC_2_2)
-+      /* This is used on compat readdir64.  */
-+		     MAX (sizeof (struct dirent),
-+			  sizeof (struct __old_dirent64))
-+# else
-+		     sizeof (struct dirent)
-+# endif
-+                     + NAME_MAX + 1
-     };
-   dirp->tbuffer = malloc (tbuffer_size);
-   if (dirp->tbuffer == NULL)
 diff --git a/sysdeps/unix/sysv/linux/readdir64.c b/sysdeps/unix/sysv/linux/readdir64.c
-index bbe247f95d..01e834e238 100644
+index b901071aa7..88e42c5e90 100644
 --- a/sysdeps/unix/sysv/linux/readdir64.c
 +++ b/sysdeps/unix/sysv/linux/readdir64.c
-@@ -102,21 +102,52 @@ versioned_symbol (libc, __readdir64, readdir64, GLIBC_2_2);
+@@ -102,21 +102,43 @@ versioned_symbol (libc, __readdir64, readdir64, GLIBC_2_2);
  # if SHLIB_COMPAT(libc, GLIBC_2_1, GLIBC_2_2)
  #  include <olddirent.h>
  
@@ -182,29 +179,20 @@ index bbe247f95d..01e834e238 100644
 +dirstream_old_entry (struct __dirstream *ds, const struct dirent64 *dp64)
 +{
 +  /* Check for overflow.  */
-+  ino_t d_ino = dp64->d_ino;
-+  if (d_ino != dp64->d_ino)
++  if (!in_ino_t_range (dp64->d_ino))
 +    return false;
 +
-+  /* Expand the translation buffer to hold the new namesize.  */
-+  size_t d_reclen = sizeof (struct __old_dirent64)
-+		    + dp64->d_reclen - offsetof (struct dirent64, d_name);
-+  if (d_reclen > ds->tbuffer_size)
-+    {
-+      char *newbuffer = realloc (ds->tbuffer, d_reclen);
-+      if (newbuffer == NULL)
-+	return false;
-+      ds->tbuffer = newbuffer;
-+      ds->tbuffer_size = d_reclen;
-+    }
++  /* And if name is too large.  */
++  if (dp64->d_reclen - offsetof (struct dirent64, d_name) > NAME_MAX)
++    return false;
 +
-+  struct __old_dirent64 *olddp64 = (struct __old_dirent64 *) ds->tbuffer;
++  ds->filepos = dp64->d_off;
 +
-+  olddp64->d_off = dp64->d_off;
-+  olddp64->d_ino = dp64->d_ino;
-+  olddp64->d_reclen = dp64->d_reclen;
-+  olddp64->d_type = dp64->d_type;
-+  memcpy (olddp64->d_name, dp64->d_name,
++  ds->tdp64.d_off = dp64->d_off;
++  ds->tdp64.d_ino = dp64->d_ino;
++  ds->tdp64.d_reclen = dp64->d_reclen;
++  ds->tdp64.d_type = dp64->d_type;
++  memcpy (ds->tdp64.d_name, dp64->d_name,
 +	  dp64->d_reclen - offsetof (struct dirent64, d_name));
 +
 +  return true;
@@ -230,7 +218,7 @@ index bbe247f95d..01e834e238 100644
        if (bytes <= 0)
  	{
  	  /* Linux may fail with ENOENT on some file systems if the
-@@ -127,17 +158,24 @@ __old_readdir64_unlocked (DIR *dirp)
+@@ -127,17 +149,21 @@ __old_readdir64_unlocked (DIR *dirp)
  	    __set_errno (saved_errno);
  	  return NULL;
  	}
@@ -251,15 +239,12 @@ index bbe247f95d..01e834e238 100644
 +  /* Skip entries which might overflow d_ino or for memory allocation failure
 +     in case of large file names.  */
 +  if (dirstream_old_entry (dirp, dp64))
-+    {
-+      dirp->filepos = dp64->d_off;
-+      return (struct __old_dirent64 *) dirp->tbuffer;
-+    }
++    return &dirp->tdp64;
 +
 +  return NULL;
  }
  
  attribute_compat_text_section
 -- 
-2.38.2
+2.39.1
 

@@ -1,7 +1,7 @@
-From 5349895a928bff28939b228824c8265d20d9fa60 Mon Sep 17 00:00:00 2001
+From 3b59ad9dec2c1c7f1b4c7f72d14ea3f2b68a4eca Mon Sep 17 00:00:00 2001
 From: Mike Frysinger <vapier@gentoo.org>
 Date: Tue, 3 Aug 2021 00:34:59 +0200
-Subject: [PATCH 01/10] Disable ldconfig during install
+Subject: [PATCH 1/9] Disable ldconfig during install
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -19,7 +19,7 @@ Signed-off-by: Andreas K. Hüttel <dilfridge@gentoo.org>
  1 file changed, 1 insertion(+)
 
 diff --git a/Makefile b/Makefile
-index 179dd478ff..763d6a084a 100644
+index 224c792185..be9df042e0 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -110,6 +110,7 @@ elf/ldso_install:
@@ -31,5 +31,5 @@ index 179dd478ff..763d6a084a 100644
  	  $(elf-objpfx)ldconfig $(addprefix -r ,$(install_root)) \
  				$(slibdir) $(libdir)
 -- 
-2.38.2
+2.39.1
 

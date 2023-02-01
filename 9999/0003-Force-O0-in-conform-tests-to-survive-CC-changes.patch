@@ -1,7 +1,7 @@
-From f44c6c3768c2a3ef274782a2e308fb6b8fe84499 Mon Sep 17 00:00:00 2001
+From d2b4275295e9c5a312063c3bce663ae1dcf754f0 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Fri, 14 Dec 2018 20:43:04 +0100
-Subject: [PATCH 03/10] Force -O0 in conform tests to survive $CC changes
+Subject: [PATCH 3/9] Force -O0 in conform tests to survive $CC changes
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -22,7 +22,7 @@ Signed-off-by: Andreas K. Hüttel <dilfridge@gentoo.org>
  2 files changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/conform/conformtest.py b/conform/conformtest.py
-index 94a7ee110f..90c81ac88e 100644
+index 124860da01..8b1643a097 100644
 --- a/conform/conformtest.py
 +++ b/conform/conformtest.py
 @@ -566,7 +566,7 @@ class HeaderTests(object):
@@ -46,7 +46,7 @@ index 94a7ee110f..90c81ac88e 100644
          subprocess.check_call(cmd, shell=True)
          bad_tokens = set()
 diff --git a/conform/linknamespace.py b/conform/linknamespace.py
-index f7fe3a7a0a..ad87fd2a6d 100644
+index 983bba1bd2..b6fce8a21c 100644
 --- a/conform/linknamespace.py
 +++ b/conform/linknamespace.py
 @@ -157,7 +157,9 @@ def main():
@@ -61,5 +61,5 @@ index f7fe3a7a0a..ad87fd2a6d 100644
                                                    args.header)
      with tempfile.TemporaryDirectory() as temp_dir:
 -- 
-2.38.2
+2.39.1
 

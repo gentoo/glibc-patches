@@ -1,7 +1,7 @@
-From 4aafe3fae7777fec09e2dd3915a8fd33642bba94 Mon Sep 17 00:00:00 2001
+From 7a2ab3f8d680338aff2559541a4bb748618e16f6 Mon Sep 17 00:00:00 2001
 From: Sergei Trofimovich <slyfox@gentoo.org>
 Date: Sat, 11 Jul 2020 20:06:51 +0300
-Subject: [PATCH 04/10] Fix miscompilation on ia64's gcc-10
+Subject: [PATCH 4/9] Fix miscompilation on ia64's gcc-10
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -13,7 +13,7 @@ Signed-off-by: Andreas K. Hüttel <dilfridge@gentoo.org>
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/sysdeps/unix/sysv/linux/ia64/dl-sysdep.h b/sysdeps/unix/sysv/linux/ia64/dl-sysdep.h
-index aa1de6b361..f6472f1942 100644
+index 3e4d5da820..eb7681b704 100644
 --- a/sysdeps/unix/sysv/linux/ia64/dl-sysdep.h
 +++ b/sysdeps/unix/sysv/linux/ia64/dl-sysdep.h
 @@ -32,7 +32,9 @@
@@ -28,5 +28,5 @@ index aa1de6b361..f6472f1942 100644
  # define DL_SYSINFO_IMPLEMENTATION		\
    asm (".text\n\t"				\
 -- 
-2.38.2
+2.39.1
 
