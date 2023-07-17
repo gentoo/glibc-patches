@@ -1,4 +1,4 @@
-From 861793671bd8daeed1f00902d9a9523ddae77462 Mon Sep 17 00:00:00 2001
+From 61beae8ace3127d476570b8989ec4d60f421b94e Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
 Date: Fri, 27 Jan 2023 14:28:31 -0300
 Subject: [PATCH 6/9] linux: Set internal DIR filepos as off64_t (BZ #23960, BZ
@@ -61,11 +61,11 @@ index dcdd699b09..187eda7584 100644
    printf ("going back past 4-th entry...\n");
  
 diff --git a/sysdeps/unix/sysv/linux/Makefile b/sysdeps/unix/sysv/linux/Makefile
-index f8bd12d991..09adb99b86 100644
+index be801e3be4..29c747b387 100644
 --- a/sysdeps/unix/sysv/linux/Makefile
 +++ b/sysdeps/unix/sysv/linux/Makefile
-@@ -464,6 +464,7 @@ ifeq ($(subdir),dirent)
- sysdep_routines += getdirentries getdirentries64
+@@ -546,6 +546,7 @@ sysdep_routines += \
+ 
  tests += \
    tst-getdents64 \
 +  tst-opendir-nolfs \
@@ -530,5 +530,5 @@ index 0000000000..52e18171a7
 +
 +#include <support/test-driver.c>
 -- 
-2.39.1
+2.39.3
 

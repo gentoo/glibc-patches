@@ -1,4 +1,4 @@
-From 7a2ab3f8d680338aff2559541a4bb748618e16f6 Mon Sep 17 00:00:00 2001
+From ed428afb4c6353692fba6cedaa2f9db7bc9fb551 Mon Sep 17 00:00:00 2001
 From: Sergei Trofimovich <slyfox@gentoo.org>
 Date: Sat, 11 Jul 2020 20:06:51 +0300
 Subject: [PATCH 4/9] Fix miscompilation on ia64's gcc-10
@@ -28,5 +28,5 @@ index 3e4d5da820..eb7681b704 100644
  # define DL_SYSINFO_IMPLEMENTATION		\
    asm (".text\n\t"				\
 -- 
-2.39.1
+2.39.3
 

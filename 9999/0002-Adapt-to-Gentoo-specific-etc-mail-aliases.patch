@@ -1,4 +1,4 @@
-From d8a45f4bfa30b502647a9ef742836c7e8694d009 Mon Sep 17 00:00:00 2001
+From bc18d3d2140f40e43f9767bf8964eca3b2d0da17 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Mon, 22 Oct 2018 22:34:13 +0200
 Subject: [PATCH 2/9] Adapt to Gentoo-specific /etc/mail/aliases
@@ -18,7 +18,7 @@ Signed-off-by: Andreas K. Hüttel <dilfridge@gentoo.org>
  3 files changed, 17 insertions(+), 11 deletions(-)
 
 diff --git a/nss/nss_files/files-alias.c b/nss/nss_files/files-alias.c
-index 1c32884fe7..f40fd19288 100644
+index 4601cb6ce9..0ce3cddca1 100644
 --- a/nss/nss_files/files-alias.c
 +++ b/nss/nss_files/files-alias.c
 @@ -42,7 +42,7 @@ internal_setent (FILE **stream)
@@ -105,5 +105,5 @@ index 7a1b7272f0..500c9a79a3 100644
    /* valgrind needs a temporary directory in the chroot.  */
    {
 -- 
-2.39.1
+2.39.3
 
