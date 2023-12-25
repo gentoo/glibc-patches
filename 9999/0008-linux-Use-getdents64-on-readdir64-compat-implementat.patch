@@ -1,7 +1,7 @@
-From 8eb2ff5f6f4040f238bd40083d6bfbb711fc675c Mon Sep 17 00:00:00 2001
+From 43e064d5764246f49561def52f9fd592d58b7ac2 Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
 Date: Fri, 27 Jan 2023 14:28:34 -0300
-Subject: [PATCH 9/9] linux: Use getdents64 on readdir64 compat implementation
+Subject: [PATCH 8/9] linux: Use getdents64 on readdir64 compat implementation
 
 It uses a similar strategy from the non-LFS readdir that also
 uses getdents64 internally and uses a translation buffer to return
@@ -246,5 +246,5 @@ index b901071aa7..88e42c5e90 100644
  
  attribute_compat_text_section
 -- 
-2.39.3
+2.41.0
 

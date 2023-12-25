@@ -1,7 +1,7 @@
-From 61beae8ace3127d476570b8989ec4d60f421b94e Mon Sep 17 00:00:00 2001
+From 8b628a35f0ce66d74be6557e74e28a49a58d749a Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
 Date: Fri, 27 Jan 2023 14:28:31 -0300
-Subject: [PATCH 6/9] linux: Set internal DIR filepos as off64_t (BZ #23960, BZ
+Subject: [PATCH 5/9] linux: Set internal DIR filepos as off64_t (BZ #23960, BZ
  #24050)
 
 It allows to obtain the expected entry offset on telldir and set
@@ -61,10 +61,10 @@ index dcdd699b09..187eda7584 100644
    printf ("going back past 4-th entry...\n");
  
 diff --git a/sysdeps/unix/sysv/linux/Makefile b/sysdeps/unix/sysv/linux/Makefile
-index be801e3be4..29c747b387 100644
+index 415aa1f14d..dc204883db 100644
 --- a/sysdeps/unix/sysv/linux/Makefile
 +++ b/sysdeps/unix/sysv/linux/Makefile
-@@ -546,6 +546,7 @@ sysdep_routines += \
+@@ -574,6 +574,7 @@ sysdep_routines += \
  
  tests += \
    tst-getdents64 \
@@ -530,5 +530,5 @@ index 0000000000..52e18171a7
 +
 +#include <support/test-driver.c>
 -- 
-2.39.3
+2.41.0
 

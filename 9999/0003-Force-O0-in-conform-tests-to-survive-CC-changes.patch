@@ -1,4 +1,4 @@
-From 85d0916ff499c8d9d135cd5200ec1d4797a74565 Mon Sep 17 00:00:00 2001
+From 6f5c946863eb63605ccf7388eebebc63cc3523d2 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Fri, 14 Dec 2018 20:43:04 +0100
 Subject: [PATCH 3/9] Force -O0 in conform tests to survive $CC changes
@@ -61,5 +61,5 @@ index 983bba1bd2..b6fce8a21c 100644
                                                    args.header)
      with tempfile.TemporaryDirectory() as temp_dir:
 -- 
-2.39.3
+2.41.0
 

@@ -1,7 +1,7 @@
-From 906b7cf87806610267ffff0b850b138bd1fd2098 Mon Sep 17 00:00:00 2001
+From f1d798104d5adfdec9aff9390dd7b62014d888eb Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
 Date: Fri, 27 Jan 2023 14:28:33 -0300
-Subject: [PATCH 8/9] linux: Add __old_readdir64_unlocked
+Subject: [PATCH 7/9] linux: Add __old_readdir64_unlocked
 
 And use it __old_readdir64_r.
 
@@ -190,5 +190,5 @@ index 5ae099bde7..b499388de7 100644
  
  compat_symbol (libc, __old_readdir64_r, readdir64_r, GLIBC_2_1);
 -- 
-2.39.3
+2.41.0
 
