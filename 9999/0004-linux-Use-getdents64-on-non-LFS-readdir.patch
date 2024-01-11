@@ -1,114 +1,29 @@
-From 782410070379ffbf54cb8abe71cc13fd24cfaea5 Mon Sep 17 00:00:00 2001
+From 3fac92713621f894d33a9f499bacb5b20f0d8ec3 Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
-Date: Fri, 27 Jan 2023 14:28:30 -0300
-Subject: [PATCH 4/9] linux: Use getdents64 on non-LFS readdir
+Date: Tue, 20 Oct 2020 13:37:15 -0300
+Subject: [PATCH 1/3] linux: Use getdents64 on non-LFS readdir
 
-The non-LFS opendir reserves a translation entry to be used to return
-the entry and the dirent64 struct is translated to the temporary buffer
-on each readdir call.
-
-Entries that overflow d_off/d_ino and the buffer reallocation failure
-(in case of large d_name) are ignored.
+It is similar to what non-LFS getdents do (including overflow check).
 
 Checked on x86_64-linux-gnu and i686-linux-gnu.
 ---
- dirent/tst-scandir.c                |  6 ++-
- include/dirent.h                    |  2 +-
- sysdeps/unix/sysv/linux/dirstream.h |  5 ++
- sysdeps/unix/sysv/linux/readdir.c   | 83 +++++++++++++++++++----------
- 4 files changed, 67 insertions(+), 29 deletions(-)
+ sysdeps/unix/sysv/linux/readdir.c | 97 +++++++++++++++++++++++--------
+ 1 file changed, 73 insertions(+), 24 deletions(-)
 
-diff --git a/dirent/tst-scandir.c b/dirent/tst-scandir.c
-index 8d87d4dd74..7bc666449e 100644
---- a/dirent/tst-scandir.c
-+++ b/dirent/tst-scandir.c
-@@ -155,8 +155,12 @@ do_test (void)
-     }
-   if (n != 6)
-     {
-+      /* Non-lfs opendir skips entries that can not be represented (for
-+	 instance if d_off is not an offset but rather an internal filesystem
-+	 representation.  For this case there is no point in continue the
-+	 testcase.  */
-       printf ("scandir returned %d entries instead of 6\n", n);
--      return 1;
-+      return EXIT_UNSUPPORTED;
-     }
- 
-   struct
-diff --git a/include/dirent.h b/include/dirent.h
-index d7567f5e86..17827176ba 100644
---- a/include/dirent.h
-+++ b/include/dirent.h
-@@ -1,8 +1,8 @@
- #ifndef _DIRENT_H
-+# include <dirent/dirent.h>
- # ifndef _ISOMAC
- #  include <dirstream.h>
- # endif
--# include <dirent/dirent.h>
- # ifndef _ISOMAC
- # include <sys/stat.h>
- # include <stdbool.h>
-diff --git a/sysdeps/unix/sysv/linux/dirstream.h b/sysdeps/unix/sysv/linux/dirstream.h
-index 3cb313b410..adcf8234f1 100644
---- a/sysdeps/unix/sysv/linux/dirstream.h
-+++ b/sysdeps/unix/sysv/linux/dirstream.h
-@@ -18,6 +18,7 @@
- #ifndef	_DIRSTREAM_H
- #define	_DIRSTREAM_H	1
- 
-+#include <dirent.h>
- #include <sys/types.h>
- 
- #include <libc-lock.h>
-@@ -41,6 +42,10 @@ struct __dirstream
- 
-     int errcode;		/* Delayed error code.  */
- 
-+#if !defined __OFF_T_MATCHES_OFF64_T || !defined __INO_T_MATCHES_INO64_T
-+    struct dirent tdp;
-+#endif
-+
-     /* Directory block.  We must make sure that this block starts
-        at an address that is aligned adequately enough to store
-        dirent entries.  Using the alignment of "void *" is not
 diff --git a/sysdeps/unix/sysv/linux/readdir.c b/sysdeps/unix/sysv/linux/readdir.c
-index 4a4c00ea07..cd0ccaf33a 100644
+index 33bae4b57d..4e2214f21e 100644
 --- a/sysdeps/unix/sysv/linux/readdir.c
 +++ b/sysdeps/unix/sysv/linux/readdir.c
-@@ -21,42 +21,71 @@
+@@ -20,43 +20,92 @@
+ 
  #if !_DIRENT_MATCHES_DIRENT64
  #include <dirstream.h>
++#include <unistd.h>
++
++# ifndef DIRENT_SET_DP_INO
++#  define DIRENT_SET_DP_INO(dp, value) (dp)->d_ino = (value)
++# endif
  
-+/* Translate the DP64 entry to the non-LFS one in the translation entry
-+   at dirstream DS.  Return true is the translation was possible or
-+   false if either an internal field can not be represented in the non-LFS
-+   entry or if the name is too long.  */
-+static bool
-+dirstream_entry (struct __dirstream *ds, const struct dirent64 *dp64)
-+{
-+  /* Check for overflow.  */
-+  if (!in_off_t_range (dp64->d_off) || !in_ino_t_range (dp64->d_ino))
-+    return false;
-+
-+  /* And if name is too large.  */
-+  if (dp64->d_reclen - offsetof (struct dirent64, d_name) > NAME_MAX)
-+    return false;
-+
-+  ds->filepos = dp64->d_off;
-+
-+  ds->tdp.d_off = dp64->d_off;
-+  ds->tdp.d_ino = dp64->d_ino;
-+  ds->tdp.d_reclen = sizeof (struct dirent)
-+    + dp64->d_reclen - offsetof (struct dirent64, d_name);
-+  ds->tdp.d_type = dp64->d_type;
-+  memcpy (ds->tdp.d_name, dp64->d_name,
-+	  dp64->d_reclen - offsetof (struct dirent64, d_name));
-+
-+  return true;
-+}
-+
  /* Read a directory entry from DIRP.  */
  struct dirent *
  __readdir_unlocked (DIR *dirp)
@@ -134,13 +49,6 @@ index 4a4c00ea07..cd0ccaf33a 100644
 -	     do not set errno in that case, to indicate success.  */
 -	  if (bytes == 0 || errno == ENOENT)
 -	    __set_errno (saved_errno);
--	  return NULL;
--	}
--      dirp->size = (size_t) bytes;
--
--      /* Reset the offset into the buffer.  */
--      dirp->offset = 0;
-+	  /* We've emptied out our buffer.  Refill it.  */
 +	  ssize_t bytes = __getdents64 (dirp->fd, dirp->data,
 +					dirp->allocation);
 +	  if (bytes <= 0)
@@ -159,13 +67,60 @@ index 4a4c00ea07..cd0ccaf33a 100644
 +	  dirp->offset = 0;
 + 	}
 +
-+      struct dirent64 *dp64 = (struct dirent64 *) &dirp->data[dirp->offset];
-+      dirp->offset += dp64->d_reclen;
++    /* These two pointers might alias the same memory buffer.  Standard C
++       requires that we always use the same type for them, so we must use the
++       union type.  */
++      union
++      {
++	struct dirent64 dp64;
++	struct dirent dp;
++	char *b;
++      } *inp, *outp;
++      inp = (void*) &dirp->data[dirp->offset];
++      outp = (void*) &dirp->data[dirp->offset];
 +
-+      /* Skip entries which might overflow d_off/d_ino or if the translation
-+	 buffer can not be resized.  */
-+      if (dirstream_entry (dirp, dp64))
-+	return &dirp->tdp;
++      const size_t size_diff = offsetof (struct dirent64, d_name)
++	- offsetof (struct dirent, d_name);
++
++      /* Since inp->dp64.d_reclen is already aligned for the kernel structure
++	 this may compute a value that is bigger than necessary.  */
++      size_t old_reclen = inp->dp64.d_reclen;
++      size_t new_reclen = ALIGN_UP (old_reclen - size_diff,
++				    _Alignof (struct dirent));
++
++      if (!in_ino_t_range (inp->dp64.d_ino)
++	  || !in_off_t_range (inp->dp64.d_off))
++	{
++	  /* Overflow.  If there was at least one entry before this one,
++	     return them without error, otherwise signal overflow.  */
++	  if (dirp->offset != 0)
++	    {
++	      __lseek64 (dirp->fd, dirp->offset, SEEK_SET);
++	      outp = (void*)(outp->b - dirp->data);
++	      return &outp->dp;
++	    }
++	  __set_errno (EOVERFLOW);
+ 	  return NULL;
+ 	}
+-      dirp->size = (size_t) bytes;
+ 
+-      /* Reset the offset into the buffer.  */
+-      dirp->offset = 0;
++      /* Copy the data from INP and access only OUTP.  */
++      const uint64_t d_ino = inp->dp64.d_ino;
++      const int64_t d_off = inp->dp64.d_off;
++      const uint8_t d_type = inp->dp64.d_type;
++      outp->dp.d_ino = d_ino;
++      outp->dp.d_off = d_off;
++      outp->dp.d_reclen = new_reclen;
++      outp->dp.d_type = d_type;
++      memmove (outp->dp.d_name, inp->dp64.d_name,
++	       old_reclen - offsetof (struct dirent64, d_name));
++
++      dirp->filepos = d_off;
++      dirp->offset += old_reclen;
++
++      return &outp->dp;
      }
 -
 -  dp = (struct dirent *) &dirp->data[dirp->offset];

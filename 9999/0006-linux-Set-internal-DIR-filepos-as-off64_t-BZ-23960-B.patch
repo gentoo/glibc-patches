@@ -1,7 +1,7 @@
-From 8b628a35f0ce66d74be6557e74e28a49a58d749a Mon Sep 17 00:00:00 2001
+From 6d5975652503acffae0566500cc15f8efc89e30a Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
-Date: Fri, 27 Jan 2023 14:28:31 -0300
-Subject: [PATCH 5/9] linux: Set internal DIR filepos as off64_t (BZ #23960, BZ
+Date: Mon, 13 Apr 2020 18:09:20 -0300
+Subject: [PATCH 3/3] linux: Set internal DIR filepos as off64_t (BZ #23960, BZ
  #24050)
 
 It allows to obtain the expected entry offset on telldir and set
@@ -24,56 +24,55 @@ telldir (BZ #24050).
 Checked on x86_64-linux-gnu, i686-linux-gnu, powerpc-linux-gnu,
 and arm-linux-gnueabihf.
 ---
- dirent/tst-seekdir.c                        |   8 ++
- sysdeps/unix/sysv/linux/Makefile            |   1 +
+ include/dirent.h                            |   2 +-
+ sysdeps/unix/sysv/linux/Makefile            |   2 +
  sysdeps/unix/sysv/linux/alpha/bits/dirent.h |   3 +
  sysdeps/unix/sysv/linux/bits/dirent.h       |   4 +
  sysdeps/unix/sysv/linux/closedir.c          |   4 +
- sysdeps/unix/sysv/linux/dirstream.h         |   6 +-
+ sysdeps/unix/sysv/linux/dirstream.h         |   9 +-
  sysdeps/unix/sysv/linux/opendir.c           |   3 +
- sysdeps/unix/sysv/linux/readdir.c           |  11 +-
+ sysdeps/unix/sysv/linux/readdir.c           |  21 ++-
+ sysdeps/unix/sysv/linux/readdir64.c         |  11 ++
  sysdeps/unix/sysv/linux/rewinddir.c         |   5 +
- sysdeps/unix/sysv/linux/seekdir.c           |  35 ++++-
- sysdeps/unix/sysv/linux/telldir.c           |  35 +++++
- sysdeps/unix/sysv/linux/telldir.h           |  65 +++++++++
- sysdeps/unix/sysv/linux/tst-opendir-nolfs.c | 146 ++++++++++++++++++++
- 13 files changed, 319 insertions(+), 7 deletions(-)
+ sysdeps/unix/sysv/linux/seekdir.c           |  30 +++-
+ sysdeps/unix/sysv/linux/telldir.c           |  36 +++++
+ sysdeps/unix/sysv/linux/telldir.h           |  70 ++++++++++
+ sysdeps/unix/sysv/linux/tst-opendir-lfs.c   |   2 +
+ sysdeps/unix/sysv/linux/tst-opendir.c       | 145 ++++++++++++++++++++
+ 15 files changed, 329 insertions(+), 18 deletions(-)
  create mode 100644 sysdeps/unix/sysv/linux/telldir.h
- create mode 100644 sysdeps/unix/sysv/linux/tst-opendir-nolfs.c
+ create mode 100644 sysdeps/unix/sysv/linux/tst-opendir-lfs.c
+ create mode 100644 sysdeps/unix/sysv/linux/tst-opendir.c
 
-diff --git a/dirent/tst-seekdir.c b/dirent/tst-seekdir.c
-index dcdd699b09..187eda7584 100644
---- a/dirent/tst-seekdir.c
-+++ b/dirent/tst-seekdir.c
-@@ -41,6 +41,14 @@ do_test (void)
-       if (i == 400)
- 	break;
-     }
-+  if (i < 3)
-+    {
-+      /* Non-lfs opendir skips entries that can not be represented (for
-+	 instance if d_off is not an offset but rather an internal filesystem
-+	 representation.  For this case there is no point in continue the
-+	 testcase.  */
-+      return 77;
-+    }
- 
-   printf ("going back past 4-th entry...\n");
- 
+diff --git a/include/dirent.h b/include/dirent.h
+index d7567f5e86..17827176ba 100644
+--- a/include/dirent.h
++++ b/include/dirent.h
+@@ -1,8 +1,8 @@
+ #ifndef _DIRENT_H
++# include <dirent/dirent.h>
+ # ifndef _ISOMAC
+ #  include <dirstream.h>
+ # endif
+-# include <dirent/dirent.h>
+ # ifndef _ISOMAC
+ # include <sys/stat.h>
+ # include <stdbool.h>
 diff --git a/sysdeps/unix/sysv/linux/Makefile b/sysdeps/unix/sysv/linux/Makefile
-index 415aa1f14d..dc204883db 100644
+index 415aa1f14d..d5b6e26e76 100644
 --- a/sysdeps/unix/sysv/linux/Makefile
 +++ b/sysdeps/unix/sysv/linux/Makefile
-@@ -574,6 +574,7 @@ sysdep_routines += \
+@@ -574,6 +574,8 @@ sysdep_routines += \
  
  tests += \
    tst-getdents64 \
-+  tst-opendir-nolfs \
++  tst-opendir \
++  tst-opendir-lfs \
    tst-readdir64-compat \
    # tests
  endif # $(subdir) == dirent
 diff --git a/sysdeps/unix/sysv/linux/alpha/bits/dirent.h b/sysdeps/unix/sysv/linux/alpha/bits/dirent.h
-index c8a0cfe93f..586d75586a 100644
+index b604576188..4e511e7654 100644
 --- a/sysdeps/unix/sysv/linux/alpha/bits/dirent.h
 +++ b/sysdeps/unix/sysv/linux/alpha/bits/dirent.h
 @@ -54,4 +54,7 @@ struct dirent64
@@ -85,7 +84,7 @@ index c8a0cfe93f..586d75586a 100644
 +
  #endif /* bits/dirent.h */
 diff --git a/sysdeps/unix/sysv/linux/bits/dirent.h b/sysdeps/unix/sysv/linux/bits/dirent.h
-index ab34d986ff..bb02dcb70a 100644
+index 8bf38f8188..7c5f3419cd 100644
 --- a/sysdeps/unix/sysv/linux/bits/dirent.h
 +++ b/sysdeps/unix/sysv/linux/bits/dirent.h
 @@ -57,3 +57,7 @@ struct dirent64
@@ -97,7 +96,7 @@ index ab34d986ff..bb02dcb70a 100644
 +   store off64_t values.  In this case, translation is required.  */
 +#define _DIRENT_OFFSET_TRANSLATION (LONG_WIDTH < 64)
 diff --git a/sysdeps/unix/sysv/linux/closedir.c b/sysdeps/unix/sysv/linux/closedir.c
-index f1c2608642..9585a6ca3a 100644
+index b86f79f133..3a4eba03f1 100644
 --- a/sysdeps/unix/sysv/linux/closedir.c
 +++ b/sysdeps/unix/sysv/linux/closedir.c
 @@ -47,6 +47,10 @@ __closedir (DIR *dirp)
@@ -112,10 +111,10 @@ index f1c2608642..9585a6ca3a 100644
  
    return __close_nocancel (fd);
 diff --git a/sysdeps/unix/sysv/linux/dirstream.h b/sysdeps/unix/sysv/linux/dirstream.h
-index adcf8234f1..8f58a1c3a6 100644
+index 3d3643733a..fc2586566a 100644
 --- a/sysdeps/unix/sysv/linux/dirstream.h
 +++ b/sysdeps/unix/sysv/linux/dirstream.h
-@@ -22,6 +22,7 @@
+@@ -21,6 +21,7 @@
  #include <sys/types.h>
  
  #include <libc-lock.h>
@@ -123,7 +122,7 @@ index adcf8234f1..8f58a1c3a6 100644
  
  /* Directory stream type.
  
-@@ -38,13 +39,16 @@ struct __dirstream
+@@ -37,10 +38,16 @@ struct __dirstream
      size_t size;		/* Total valid data in the block.  */
      size_t offset;		/* Current offset into the block.  */
  
@@ -132,17 +131,17 @@ index adcf8234f1..8f58a1c3a6 100644
  
      int errcode;		/* Delayed error code.  */
  
- #if !defined __OFF_T_MATCHES_OFF64_T || !defined __INO_T_MATCHES_INO64_T
-     struct dirent tdp;
- #endif
 +#if _DIRENT_OFFSET_TRANSLATION
-+    struct dirstream_loc_t locs; /* off64_t to long int map for telldir.  */
++    /* The array is used to map long to off_64 for telldir/seekdir for ABIs
++       where long can not fully represend a LFS off_t value.  */
++    struct dirstream_loc_t locs;
 +#endif
- 
++
      /* Directory block.  We must make sure that this block starts
         at an address that is aligned adequately enough to store
+        dirent entries.  Using the alignment of "void *" is not
 diff --git a/sysdeps/unix/sysv/linux/opendir.c b/sysdeps/unix/sysv/linux/opendir.c
-index 4336196a4d..3e2caabb9d 100644
+index b5218138ec..fda2c5f9fe 100644
 --- a/sysdeps/unix/sysv/linux/opendir.c
 +++ b/sysdeps/unix/sysv/linux/opendir.c
 @@ -129,6 +129,9 @@ __alloc_dir (int fd, bool close_fd, int flags,
@@ -156,36 +155,68 @@ index 4336196a4d..3e2caabb9d 100644
    return dirp;
  }
 diff --git a/sysdeps/unix/sysv/linux/readdir.c b/sysdeps/unix/sysv/linux/readdir.c
-index cd0ccaf33a..7a7f484c36 100644
+index 4e2214f21e..d474f70a8d 100644
 --- a/sysdeps/unix/sysv/linux/readdir.c
 +++ b/sysdeps/unix/sysv/linux/readdir.c
-@@ -36,6 +36,15 @@ dirstream_entry (struct __dirstream *ds, const struct dirent64 *dp64)
-   if (dp64->d_reclen - offsetof (struct dirent64, d_name) > NAME_MAX)
-     return false;
+@@ -75,25 +75,22 @@ __readdir_unlocked (DIR *dirp)
+       size_t new_reclen = ALIGN_UP (old_reclen - size_diff,
+ 				    _Alignof (struct dirent));
  
-+  /* telldir can not return an error, so preallocate the map if the entry can
-+     not be packed directly.  */
-+  if (telldir_need_dirstream (dp64->d_off))
+-      if (!in_ino_t_range (inp->dp64.d_ino)
+-	  || !in_off_t_range (inp->dp64.d_off))
++      /* telldir can not return an error, so preallocate a map entry if
++	 d_off can not be used directly.  */
++      if (telldir_need_dirstream (inp->dp64.d_off))
+ 	{
+-	  /* Overflow.  If there was at least one entry before this one,
+-	     return them without error, otherwise signal overflow.  */
+-	  if (dirp->offset != 0)
+-	    {
+-	      __lseek64 (dirp->fd, dirp->offset, SEEK_SET);
+-	      outp = (void*)(outp->b - dirp->data);
+-	      return &outp->dp;
+-	    }
+-	  __set_errno (EOVERFLOW);
+-	  return NULL;
++	  dirstream_loc_add (&dirp->locs, inp->dp64.d_off);
++	  if (dirstream_loc_has_failed (&dirp->locs))
++	    return NULL;
+ 	}
+ 
+       /* Copy the data from INP and access only OUTP.  */
+       const uint64_t d_ino = inp->dp64.d_ino;
+       const int64_t d_off = inp->dp64.d_off;
+       const uint8_t d_type = inp->dp64.d_type;
++      /* This will clamp both d_off and d_ino values, which is required to
++	 avoid return EOVERFLOW.  The lelldir/seekdir uses the 'locs' value
++	 if the value overflows.  */
+       outp->dp.d_ino = d_ino;
+       outp->dp.d_off = d_off;
+       outp->dp.d_reclen = new_reclen;
+diff --git a/sysdeps/unix/sysv/linux/readdir64.c b/sysdeps/unix/sysv/linux/readdir64.c
+index e6f5108c0a..d61c5e6e26 100644
+--- a/sysdeps/unix/sysv/linux/readdir64.c
++++ b/sysdeps/unix/sysv/linux/readdir64.c
+@@ -68,6 +68,17 @@ __readdir64 (DIR *dirp)
+   dirp->offset += dp->d_reclen;
+   dirp->filepos = dp->d_off;
+ 
++#if _DIRENT_OFFSET_TRANSLATION
++  /* telldir can not return an error, so preallocate a map entry if
++     d_off can not be used directly.  */
++  if (telldir_need_dirstream (dp->d_off))
 +    {
-+      dirstream_loc_add (&ds->locs, dp64->d_off);
-+      if (dirstream_loc_has_failed (&ds->locs))
-+	return false;
++      dirstream_loc_add (&dirp->locs, dp->d_off);
++      if (dirstream_loc_has_failed (&dirp->locs))
++	dp = NULL;
 +    }
++#endif
 +
-   ds->filepos = dp64->d_off;
- 
-   ds->tdp.d_off = dp64->d_off;
-@@ -76,7 +85,7 @@ __readdir_unlocked (DIR *dirp)
- 
-  	  /* Reset the offset into the buffer.  */
- 	  dirp->offset = 0;
-- 	}
-+	}
- 
-       struct dirent64 *dp64 = (struct dirent64 *) &dirp->data[dirp->offset];
-       dirp->offset += dp64->d_reclen;
+ #if IS_IN (libc)
+   __libc_lock_unlock (dirp->lock);
+ #endif
 diff --git a/sysdeps/unix/sysv/linux/rewinddir.c b/sysdeps/unix/sysv/linux/rewinddir.c
-index c0fb7aa765..1b158a584f 100644
+index af85000a28..4936be5c6a 100644
 --- a/sysdeps/unix/sysv/linux/rewinddir.c
 +++ b/sysdeps/unix/sysv/linux/rewinddir.c
 @@ -33,6 +33,11 @@ __rewinddir (DIR *dirp)
@@ -201,10 +232,10 @@ index c0fb7aa765..1b158a584f 100644
    __libc_lock_unlock (dirp->lock);
  #endif
 diff --git a/sysdeps/unix/sysv/linux/seekdir.c b/sysdeps/unix/sysv/linux/seekdir.c
-index 939ccc4447..30cce691a4 100644
+index 52005878fc..cd49676750 100644
 --- a/sysdeps/unix/sysv/linux/seekdir.c
 +++ b/sysdeps/unix/sysv/linux/seekdir.c
-@@ -22,14 +22,39 @@
+@@ -22,14 +22,36 @@
  #include <dirstream.h>
  
  /* Seek to position POS in DIRP.  */
@@ -217,8 +248,6 @@ index 939ccc4447..30cce691a4 100644
    __libc_lock_lock (dirp->lock);
 -  (void) __lseek (dirp->fd, pos, SEEK_SET);
 -  dirp->size = 0;
--  dirp->offset = 0;
--  dirp->filepos = pos;
 +
 +#if _DIRENT_OFFSET_TRANSLATION
 +  union dirstream_packed dsp = { .l = pos };
@@ -239,24 +268,23 @@ index 939ccc4447..30cce691a4 100644
 +  filepos = pos;
 +#endif
 +
-+  if (dirp->filepos != filepos)
-+    {
-+      __lseek64 (dirp->fd, filepos, SEEK_SET);
-+      dirp->filepos = filepos;
-+      dirp->offset = 0;
-+      dirp->size = 0;
-+    }
++  __lseek64 (dirp->fd, filepos, SEEK_SET);
++  dirp->filepos = filepos;
+   dirp->offset = 0;
+-  dirp->filepos = pos;
++  dirp->size = 0;
 +
    __libc_lock_unlock (dirp->lock);
  }
 diff --git a/sysdeps/unix/sysv/linux/telldir.c b/sysdeps/unix/sysv/linux/telldir.c
-index 1e5c129e9f..c3ef14f3da 100644
+index c8dff30719..8d9e2c9db2 100644
 --- a/sysdeps/unix/sysv/linux/telldir.c
 +++ b/sysdeps/unix/sysv/linux/telldir.c
-@@ -15,9 +15,11 @@
+@@ -15,9 +15,12 @@
     License along with the GNU C Library; if not, see
     <https://www.gnu.org/licenses/>.  */
  
++#include <stdio.h>
 +#include <assert.h>
  #include <dirent.h>
  
@@ -265,7 +293,7 @@ index 1e5c129e9f..c3ef14f3da 100644
  
  /* Return the current position of DIRP.  */
  long int
-@@ -26,7 +28,40 @@ telldir (DIR *dirp)
+@@ -26,7 +29,40 @@ telldir (DIR *dirp)
    long int ret;
  
    __libc_lock_lock (dirp->lock);
@@ -287,15 +315,15 @@ index 1e5c129e9f..c3ef14f3da 100644
 +      dsp.l = -1;
 +
 +      size_t i;
-+      for (i = 0; i < dirstream_loc_size (&dirp->locs); i++)
-+	if (*dirstream_loc_at (&dirp->locs, i) == dirp->filepos)
-+	  break;
-+      /* It should be pre-allocated on readdir.  */
-+      assert (i != dirstream_loc_size (&dirp->locs));
++      for (i = 0; ;i++)
++	{
++	  /* It should be pre-allocated on readdir.  */
++	  assert (i < dirstream_loc_size (&dirp->locs));
++	  if (*dirstream_loc_at (&dirp->locs, i) == dirp->filepos)
++	    break;
++	}
 +
 +      dsp.p.is_packed = 0;
-+      /* This assignment might overflow, however most likely ENOME would
-+	 happen long before.  */
 +      dsp.p.info = i;
 +    }
 +
@@ -308,10 +336,10 @@ index 1e5c129e9f..c3ef14f3da 100644
    return ret;
 diff --git a/sysdeps/unix/sysv/linux/telldir.h b/sysdeps/unix/sysv/linux/telldir.h
 new file mode 100644
-index 0000000000..758bcb0eb3
+index 0000000000..7772129db0
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/telldir.h
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,70 @@
 +/* Linux internal telldir definitions.
 +   Copyright (C) 2023 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
@@ -333,7 +361,15 @@ index 0000000000..758bcb0eb3
 +#ifndef _TELLDIR_H
 +#define _TELLDIR_H 1
 +
++#include <dirent.h>
++
 +#if _DIRENT_OFFSET_TRANSLATION
++
++_Static_assert (sizeof (long int) < sizeof (__off64_t),
++		"sizeof (long int) >= sizeof (__off64_t)");
++
++# include <intprops.h>
++
 +/* On platforms where 'long int' is smaller than 'off64_t' this is how the
 +   returned value is encoded and returned by 'telldir'.  If the directory
 +   offset can be enconded in 31 bits it is returned in the 'info' member
@@ -352,9 +388,6 @@ index 0000000000..758bcb0eb3
 +  } p;
 +};
 +
-+_Static_assert (sizeof (long int) == sizeof (union dirstream_packed),
-+		"sizeof (long int) != sizeof (union dirstream_packed)");
-+
 +/* telldir maintains a list of offsets that describe the obtained diretory
 +   position if it can fit this information in the returned 'dirstream_packed'
 +   struct.  */
@@ -367,7 +400,7 @@ index 0000000000..758bcb0eb3
 +static __always_inline bool
 +telldir_need_dirstream (__off64_t d_off)
 +{
-+  return d_off >= 1UL << 31;
++  return ! (TYPE_MINIMUM (off_t) <= d_off && d_off <= TYPE_MAXIMUM (off_t));
 +}
 +#else
 +
@@ -377,12 +410,20 @@ index 0000000000..758bcb0eb3
 +#endif /* __LP64__  */
 +
 +#endif /* _TELLDIR_H  */
-diff --git a/sysdeps/unix/sysv/linux/tst-opendir-nolfs.c b/sysdeps/unix/sysv/linux/tst-opendir-nolfs.c
+diff --git a/sysdeps/unix/sysv/linux/tst-opendir-lfs.c b/sysdeps/unix/sysv/linux/tst-opendir-lfs.c
 new file mode 100644
-index 0000000000..52e18171a7
+index 0000000000..1de1891fb4
 --- /dev/null
-+++ b/sysdeps/unix/sysv/linux/tst-opendir-nolfs.c
-@@ -0,0 +1,146 @@
++++ b/sysdeps/unix/sysv/linux/tst-opendir-lfs.c
+@@ -0,0 +1,2 @@
++#define _FILE_OFFSET_BITS 64
++#include "tst-opendir.c"
+diff --git a/sysdeps/unix/sysv/linux/tst-opendir.c b/sysdeps/unix/sysv/linux/tst-opendir.c
+new file mode 100644
+index 0000000000..216ecf123f
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/tst-opendir.c
+@@ -0,0 +1,145 @@
 +/* Check multiple telldir and seekdir.
 +   Copyright (C) 2023 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
@@ -455,17 +496,18 @@ index 0000000000..52e18171a7
 +  DIR *dirp = opendir (dirname);
 +  TEST_VERIFY_EXIT (dirp != NULL);
 +
-+  long int *tdirp = xmalloc (nfiles * sizeof (long int));
-+  struct dirent **ddirp = xmalloc (nfiles * sizeof (struct dirent *));
++  long int *tdirp = xreallocarray (NULL, nfiles, sizeof (long int));
++  struct dirent **ddirp = xreallocarray (NULL, nfiles,
++					 sizeof (struct dirent *));
 +
 +  /* For non-LFS, the entry is skipped if it can not be converted.  */
 +  int count = 0;
 +  for (; count < nfiles; count++)
 +    {
-+      tdirp[count] = telldir (dirp);
 +      struct dirent *dp = readdir (dirp);
 +      if (dp == NULL)
 +	break;
++      tdirp[count] = telldir (dirp);
 +      ddirp[count] = xmalloc (dp->d_reclen);
 +      memcpy (ddirp[count], dp, dp->d_reclen);
 +    }
@@ -499,11 +541,10 @@ index 0000000000..52e18171a7
 +          entry.d_name[sizeof (entry.d_name) - 1] = '\0';
 +          TEST_VERIFY (strlen (entry.d_name) < sizeof (entry.d_name) - 1);
 +
-+	  if (in_ino_t_range (entry.d_ino) && in_off_t_range (entry.d_off))
++	  if (in_ino_t_range (entry.d_ino))
 +	    {
 +	      TEST_COMPARE_STRING (entry.d_name, ddirp[i]->d_name);
 +	      TEST_COMPARE (entry.d_ino, ddirp[i]->d_ino);
-+	      TEST_COMPARE (entry.d_off, ddirp[i]->d_off);
 +	      TEST_COMPARE (entry.d_type, ddirp[i]->d_type);
 +
 +	      /* Offset zero is reserved for the first entry.  */
@@ -517,7 +558,6 @@ index 0000000000..52e18171a7
 +	}
 +    }
 +
-+  /* direntries_read has been called more than once.  */
 +  TEST_COMPARE (count, i);
 +
 +  free (tdirp);
