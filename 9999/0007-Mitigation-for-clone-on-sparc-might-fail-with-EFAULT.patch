@@ -1,0 +1,50 @@
+From e2218c420f1aca6c8910f4ddd6df11815c137bdf Mon Sep 17 00:00:00 2001
+From: Michael Karcher <sourceware-bugzilla@mkarcher.dialup.fu-berlin.de>
+Date: Sat, 17 Feb 2024 22:47:58 +0100
+Subject: [PATCH] Mitigation for "clone on sparc might fail with -EFAULT for no
+ valid reason"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Bug: https://www.mail-archive.com/debian-glibc@lists.debian.org/msg62592.html
+Bug: https://sourceware.org/bugzilla/show_bug.cgi?id=31394
+See-also: https://lore.kernel.org/sparclinux/62f9be9d-a086-4134-9a9f-5df8822708af@mkarcher.dialup.fu-berlin.de/
+Signed-off-by: Andreas K. Hüttel <dilfridge@gentoo.org>
+(cherry picked from commit fa441cd6be9a34d81306d41defeefaa2ac31d0b8)
+---
+ sysdeps/unix/sysv/linux/sparc/sparc32/clone.S | 3 +++
+ sysdeps/unix/sysv/linux/sparc/sparc64/clone.S | 3 +++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/sysdeps/unix/sysv/linux/sparc/sparc32/clone.S b/sysdeps/unix/sysv/linux/sparc/sparc32/clone.S
+index b48aa96ea6..0b1af3203b 100644
+--- a/sysdeps/unix/sysv/linux/sparc/sparc32/clone.S
++++ b/sysdeps/unix/sysv/linux/sparc/sparc32/clone.S
+@@ -28,6 +28,9 @@
+ 	.text
+ ENTRY (__clone)
+ 	save	%sp,-96,%sp
++	save	%sp,-96,%sp
++	flushw
++	restore
+ 	cfi_def_cfa_register(%fp)
+ 	cfi_window_save
+ 	cfi_register(%o7, %i7)
+diff --git a/sysdeps/unix/sysv/linux/sparc/sparc64/clone.S b/sysdeps/unix/sysv/linux/sparc/sparc64/clone.S
+index e6c4e12f47..48a7152f38 100644
+--- a/sysdeps/unix/sysv/linux/sparc/sparc64/clone.S
++++ b/sysdeps/unix/sysv/linux/sparc/sparc64/clone.S
+@@ -32,6 +32,9 @@
+ 
+ ENTRY (__clone)
+ 	save	%sp, -192, %sp
++	save	%sp, -192, %sp
++	flushw
++	restore
+ 	cfi_def_cfa_register(%fp)
+ 	cfi_window_save
+ 	cfi_register(%o7, %i7)
+-- 
+2.43.0
+
