@@ -1,4 +1,4 @@
-From 6f5c946863eb63605ccf7388eebebc63cc3523d2 Mon Sep 17 00:00:00 2001
+From 848cc4f87354309e6298112270622f1456eed862 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Fri, 14 Dec 2018 20:43:04 +0100
 Subject: [PATCH 3/9] Force -O0 in conform tests to survive $CC changes
@@ -22,7 +22,7 @@ Signed-off-by: Andreas K. Hüttel <dilfridge@gentoo.org>
  2 files changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/conform/conformtest.py b/conform/conformtest.py
-index 124860da01..8b1643a097 100644
+index d38afb06a8..c0df540ee8 100644
 --- a/conform/conformtest.py
 +++ b/conform/conformtest.py
 @@ -566,7 +566,7 @@ class HeaderTests(object):
@@ -38,7 +38,7 @@ index 124860da01..8b1643a097 100644
          out_file = os.path.join(self.temp_dir, 'namespace-out')
          with open(c_file, 'w') as c_file_out:
              c_file_out.write('#include <%s>\n' % self.header)
--        cmd = ('%s %s -E %s -P -Wp,-dN > %s'
+-        cmd = ('%s %s -E %s -P -Wp,-dD > %s'
 +        # -O0 to negate effect of possible -O<N> passed to $CC
 +        # See https://bugs.gentoo.org/659030#c6
 +        cmd = ('%s -O0 %s -E %s -P -Wp,-dN > %s'
@@ -46,7 +46,7 @@ index 124860da01..8b1643a097 100644
          subprocess.check_call(cmd, shell=True)
          bad_tokens = set()
 diff --git a/conform/linknamespace.py b/conform/linknamespace.py
-index 983bba1bd2..b6fce8a21c 100644
+index 8bc42bee22..2f8842456b 100644
 --- a/conform/linknamespace.py
 +++ b/conform/linknamespace.py
 @@ -157,7 +157,9 @@ def main():
@@ -60,6 +60,7 @@ index 983bba1bd2..b6fce8a21c 100644
      c_syms = glibcconform.list_exported_functions(compiler, args.standard,
                                                    args.header)
      with tempfile.TemporaryDirectory() as temp_dir:
+
 -- 
-2.41.0
+2.47.1
 
