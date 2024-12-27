@@ -1,8 +1,11 @@
-From 6d5975652503acffae0566500cc15f8efc89e30a Mon Sep 17 00:00:00 2001
+From 8773ba65007694b27613d9e8dfc6137c90ae462d Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
 Date: Mon, 13 Apr 2020 18:09:20 -0300
-Subject: [PATCH 3/3] linux: Set internal DIR filepos as off64_t (BZ #23960, BZ
+Subject: [PATCH 6/6] linux: Set internal DIR filepos as off64_t (BZ #23960, BZ
  #24050)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 It allows to obtain the expected entry offset on telldir and set
 it correctly on seekdir on platforms where long int is smaller
@@ -23,6 +26,8 @@ telldir (BZ #24050).
 
 Checked on x86_64-linux-gnu, i686-linux-gnu, powerpc-linux-gnu,
 and arm-linux-gnueabihf.
+
+Rebased for glibc-2.41 by Andreas K. Hüttel <dilfridge@gentoo.org>
 ---
  include/dirent.h                            |   2 +-
  sysdeps/unix/sysv/linux/Makefile            |   2 +
@@ -59,10 +64,10 @@ index d7567f5e86..17827176ba 100644
  # include <sys/stat.h>
  # include <stdbool.h>
 diff --git a/sysdeps/unix/sysv/linux/Makefile b/sysdeps/unix/sysv/linux/Makefile
-index 415aa1f14d..d5b6e26e76 100644
+index eb9c697ce5..f86100006b 100644
 --- a/sysdeps/unix/sysv/linux/Makefile
 +++ b/sysdeps/unix/sysv/linux/Makefile
-@@ -574,6 +574,8 @@ sysdep_routines += \
+@@ -590,6 +590,8 @@ sysdep_routines += \
  
  tests += \
    tst-getdents64 \
@@ -194,10 +199,10 @@ index 4e2214f21e..d474f70a8d 100644
        outp->dp.d_off = d_off;
        outp->dp.d_reclen = new_reclen;
 diff --git a/sysdeps/unix/sysv/linux/readdir64.c b/sysdeps/unix/sysv/linux/readdir64.c
-index e6f5108c0a..d61c5e6e26 100644
+index e6b8867b7a..34c55196ec 100644
 --- a/sysdeps/unix/sysv/linux/readdir64.c
 +++ b/sysdeps/unix/sysv/linux/readdir64.c
-@@ -68,6 +68,17 @@ __readdir64 (DIR *dirp)
+@@ -61,6 +61,17 @@ __readdir64_unlocked (DIR *dirp)
    dirp->offset += dp->d_reclen;
    dirp->filepos = dp->d_off;
  
@@ -212,9 +217,9 @@ index e6f5108c0a..d61c5e6e26 100644
 +    }
 +#endif
 +
- #if IS_IN (libc)
-   __libc_lock_unlock (dirp->lock);
- #endif
+   return dp;
+ }
+ 
 diff --git a/sysdeps/unix/sysv/linux/rewinddir.c b/sysdeps/unix/sysv/linux/rewinddir.c
 index af85000a28..4936be5c6a 100644
 --- a/sysdeps/unix/sysv/linux/rewinddir.c
@@ -570,5 +575,5 @@ index 0000000000..216ecf123f
 +
 +#include <support/test-driver.c>
 -- 
-2.41.0
+2.45.2
 

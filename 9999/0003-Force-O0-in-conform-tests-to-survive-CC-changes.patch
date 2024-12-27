@@ -1,7 +1,7 @@
-From 848cc4f87354309e6298112270622f1456eed862 Mon Sep 17 00:00:00 2001
+From 65ca896f1fe058040a88356a573ecb1ffca3aa58 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Fri, 14 Dec 2018 20:43:04 +0100
-Subject: [PATCH 3/9] Force -O0 in conform tests to survive $CC changes
+Subject: [PATCH 3/6] Force -O0 in conform tests to survive $CC changes
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -60,7 +60,6 @@ index 8bc42bee22..2f8842456b 100644
      c_syms = glibcconform.list_exported_functions(compiler, args.standard,
                                                    args.header)
      with tempfile.TemporaryDirectory() as temp_dir:
-
 -- 
-2.47.1
+2.45.2
 
