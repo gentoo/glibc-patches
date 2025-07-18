@@ -1,4 +1,4 @@
-From 1be0d15708736f689ab2cc371a1576b029623a7a Mon Sep 17 00:00:00 2001
+From b27348f88a5025ed75f16fe2da62fc5c2d1e40d2 Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
 Date: Wed, 1 Mar 2023 14:41:23 -0300
 Subject: [PATCH 5/6] support: Add xreallocarray
@@ -12,7 +12,7 @@ As a wrapper over reallocarray.
  create mode 100644 support/xreallocarray.c
 
 diff --git a/support/Makefile b/support/Makefile
-index 099f5ebb9c..ce19f5a2b8 100644
+index d41278eeab..81f8fbb222 100644
 --- a/support/Makefile
 +++ b/support/Makefile
 @@ -210,6 +210,7 @@ libsupport-routines = \
@@ -24,7 +24,7 @@ index 099f5ebb9c..ce19f5a2b8 100644
    xsendto \
    xsetlocale \
 diff --git a/support/support.h b/support/support.h
-index 1a77f79793..78ad445b65 100644
+index 4998a34894..c1b7070b1c 100644
 --- a/support/support.h
 +++ b/support/support.h
 @@ -107,6 +107,8 @@ extern void *xcalloc (size_t n, size_t s)
@@ -72,5 +72,5 @@ index 0000000000..74fdaa421b
 +  return r;
 +}
 -- 
-2.45.2
+2.49.0
 

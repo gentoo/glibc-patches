@@ -1,4 +1,4 @@
-From 8773ba65007694b27613d9e8dfc6137c90ae462d Mon Sep 17 00:00:00 2001
+From 220967a1f6f6b50698b8c0f2bd32439171f44421 Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
 Date: Mon, 13 Apr 2020 18:09:20 -0300
 Subject: [PATCH 6/6] linux: Set internal DIR filepos as off64_t (BZ #23960, BZ
@@ -64,10 +64,10 @@ index d7567f5e86..17827176ba 100644
  # include <sys/stat.h>
  # include <stdbool.h>
 diff --git a/sysdeps/unix/sysv/linux/Makefile b/sysdeps/unix/sysv/linux/Makefile
-index eb9c697ce5..f86100006b 100644
+index 0aec783f1e..b0052a5b04 100644
 --- a/sysdeps/unix/sysv/linux/Makefile
 +++ b/sysdeps/unix/sysv/linux/Makefile
-@@ -590,6 +590,8 @@ sysdep_routines += \
+@@ -603,6 +603,8 @@ sysdep_routines += \
  
  tests += \
    tst-getdents64 \
@@ -77,7 +77,7 @@ index eb9c697ce5..f86100006b 100644
    # tests
  endif # $(subdir) == dirent
 diff --git a/sysdeps/unix/sysv/linux/alpha/bits/dirent.h b/sysdeps/unix/sysv/linux/alpha/bits/dirent.h
-index b604576188..4e511e7654 100644
+index fbec5500b5..0e39599ee6 100644
 --- a/sysdeps/unix/sysv/linux/alpha/bits/dirent.h
 +++ b/sysdeps/unix/sysv/linux/alpha/bits/dirent.h
 @@ -54,4 +54,7 @@ struct dirent64
@@ -89,7 +89,7 @@ index b604576188..4e511e7654 100644
 +
  #endif /* bits/dirent.h */
 diff --git a/sysdeps/unix/sysv/linux/bits/dirent.h b/sysdeps/unix/sysv/linux/bits/dirent.h
-index 8bf38f8188..7c5f3419cd 100644
+index cd5e93c6c9..87b2150147 100644
 --- a/sysdeps/unix/sysv/linux/bits/dirent.h
 +++ b/sysdeps/unix/sysv/linux/bits/dirent.h
 @@ -57,3 +57,7 @@ struct dirent64
@@ -101,7 +101,7 @@ index 8bf38f8188..7c5f3419cd 100644
 +   store off64_t values.  In this case, translation is required.  */
 +#define _DIRENT_OFFSET_TRANSLATION (LONG_WIDTH < 64)
 diff --git a/sysdeps/unix/sysv/linux/closedir.c b/sysdeps/unix/sysv/linux/closedir.c
-index b86f79f133..3a4eba03f1 100644
+index 36f196855a..3684277326 100644
 --- a/sysdeps/unix/sysv/linux/closedir.c
 +++ b/sysdeps/unix/sysv/linux/closedir.c
 @@ -47,6 +47,10 @@ __closedir (DIR *dirp)
@@ -116,7 +116,7 @@ index b86f79f133..3a4eba03f1 100644
  
    return __close_nocancel (fd);
 diff --git a/sysdeps/unix/sysv/linux/dirstream.h b/sysdeps/unix/sysv/linux/dirstream.h
-index 3d3643733a..fc2586566a 100644
+index 8649f85fef..77c2ff7e86 100644
 --- a/sysdeps/unix/sysv/linux/dirstream.h
 +++ b/sysdeps/unix/sysv/linux/dirstream.h
 @@ -21,6 +21,7 @@
@@ -146,7 +146,7 @@ index 3d3643733a..fc2586566a 100644
         at an address that is aligned adequately enough to store
         dirent entries.  Using the alignment of "void *" is not
 diff --git a/sysdeps/unix/sysv/linux/opendir.c b/sysdeps/unix/sysv/linux/opendir.c
-index b5218138ec..fda2c5f9fe 100644
+index 48e3dc4fdb..0c53111318 100644
 --- a/sysdeps/unix/sysv/linux/opendir.c
 +++ b/sysdeps/unix/sysv/linux/opendir.c
 @@ -129,6 +129,9 @@ __alloc_dir (int fd, bool close_fd, int flags,
@@ -160,7 +160,7 @@ index b5218138ec..fda2c5f9fe 100644
    return dirp;
  }
 diff --git a/sysdeps/unix/sysv/linux/readdir.c b/sysdeps/unix/sysv/linux/readdir.c
-index 4e2214f21e..d474f70a8d 100644
+index 0213de925c..9a0f9da432 100644
 --- a/sysdeps/unix/sysv/linux/readdir.c
 +++ b/sysdeps/unix/sysv/linux/readdir.c
 @@ -75,25 +75,22 @@ __readdir_unlocked (DIR *dirp)
@@ -199,7 +199,7 @@ index 4e2214f21e..d474f70a8d 100644
        outp->dp.d_off = d_off;
        outp->dp.d_reclen = new_reclen;
 diff --git a/sysdeps/unix/sysv/linux/readdir64.c b/sysdeps/unix/sysv/linux/readdir64.c
-index e6b8867b7a..34c55196ec 100644
+index f4b2cc0161..8d39817064 100644
 --- a/sysdeps/unix/sysv/linux/readdir64.c
 +++ b/sysdeps/unix/sysv/linux/readdir64.c
 @@ -61,6 +61,17 @@ __readdir64_unlocked (DIR *dirp)
@@ -221,7 +221,7 @@ index e6b8867b7a..34c55196ec 100644
  }
  
 diff --git a/sysdeps/unix/sysv/linux/rewinddir.c b/sysdeps/unix/sysv/linux/rewinddir.c
-index af85000a28..4936be5c6a 100644
+index 40b5e10954..cd6972c1a4 100644
 --- a/sysdeps/unix/sysv/linux/rewinddir.c
 +++ b/sysdeps/unix/sysv/linux/rewinddir.c
 @@ -33,6 +33,11 @@ __rewinddir (DIR *dirp)
@@ -237,7 +237,7 @@ index af85000a28..4936be5c6a 100644
    __libc_lock_unlock (dirp->lock);
  #endif
 diff --git a/sysdeps/unix/sysv/linux/seekdir.c b/sysdeps/unix/sysv/linux/seekdir.c
-index 52005878fc..cd49676750 100644
+index facd2f95dc..5fdb37519c 100644
 --- a/sysdeps/unix/sysv/linux/seekdir.c
 +++ b/sysdeps/unix/sysv/linux/seekdir.c
 @@ -22,14 +22,36 @@
@@ -282,7 +282,7 @@ index 52005878fc..cd49676750 100644
    __libc_lock_unlock (dirp->lock);
  }
 diff --git a/sysdeps/unix/sysv/linux/telldir.c b/sysdeps/unix/sysv/linux/telldir.c
-index c8dff30719..8d9e2c9db2 100644
+index 039d377086..89374a3f95 100644
 --- a/sysdeps/unix/sysv/linux/telldir.c
 +++ b/sysdeps/unix/sysv/linux/telldir.c
 @@ -15,9 +15,12 @@
@@ -575,5 +575,5 @@ index 0000000000..216ecf123f
 +
 +#include <support/test-driver.c>
 -- 
-2.45.2
+2.49.0
 

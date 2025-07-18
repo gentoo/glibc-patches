@@ -1,4 +1,4 @@
-From 65ca896f1fe058040a88356a573ecb1ffca3aa58 Mon Sep 17 00:00:00 2001
+From 4b76e16d6d8bf67a96047042061d21dbe45b4200 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Fri, 14 Dec 2018 20:43:04 +0100
 Subject: [PATCH 3/6] Force -O0 in conform tests to survive $CC changes
@@ -22,10 +22,10 @@ Signed-off-by: Andreas K. Hüttel <dilfridge@gentoo.org>
  2 files changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/conform/conformtest.py b/conform/conformtest.py
-index d38afb06a8..c0df540ee8 100644
+index a14ffb86dd..8a7da74a06 100644
 --- a/conform/conformtest.py
 +++ b/conform/conformtest.py
-@@ -566,7 +566,7 @@ class HeaderTests(object):
+@@ -570,7 +570,7 @@ class HeaderTests(object):
          o_file = os.path.join(self.temp_dir, 'test.o')
          with open(c_file, 'w') as c_file_out:
              c_file_out.write('#include <%s>\n%s' % (self.header, text))
@@ -34,7 +34,7 @@ index d38afb06a8..c0df540ee8 100644
          try:
              subprocess.check_call(cmd, shell=True)
          except subprocess.CalledProcessError:
-@@ -620,7 +620,9 @@ class HeaderTests(object):
+@@ -624,7 +624,9 @@ class HeaderTests(object):
          out_file = os.path.join(self.temp_dir, 'namespace-out')
          with open(c_file, 'w') as c_file_out:
              c_file_out.write('#include <%s>\n' % self.header)
@@ -46,7 +46,7 @@ index d38afb06a8..c0df540ee8 100644
          subprocess.check_call(cmd, shell=True)
          bad_tokens = set()
 diff --git a/conform/linknamespace.py b/conform/linknamespace.py
-index 8bc42bee22..2f8842456b 100644
+index d099cac027..ac9adbf4d5 100644
 --- a/conform/linknamespace.py
 +++ b/conform/linknamespace.py
 @@ -157,7 +157,9 @@ def main():
@@ -61,5 +61,5 @@ index 8bc42bee22..2f8842456b 100644
                                                    args.header)
      with tempfile.TemporaryDirectory() as temp_dir:
 -- 
-2.45.2
+2.49.0
 

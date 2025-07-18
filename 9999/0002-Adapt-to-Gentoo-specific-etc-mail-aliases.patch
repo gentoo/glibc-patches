@@ -1,4 +1,4 @@
-From 01d781a5ff9392dccf849c3a9ce3063375c11431 Mon Sep 17 00:00:00 2001
+From 4c2ba791aa33b1a2ebdd04febfd95e25958a6515 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Mon, 22 Oct 2018 22:34:13 +0200
 Subject: [PATCH 2/6] Adapt to Gentoo-specific /etc/mail/aliases
@@ -18,7 +18,7 @@ Signed-off-by: Andreas K. Hüttel <dilfridge@gentoo.org>
  3 files changed, 17 insertions(+), 11 deletions(-)
 
 diff --git a/nss/nss_files/files-alias.c b/nss/nss_files/files-alias.c
-index 14a59b4655..2c4b208b25 100644
+index 297449013d..7857e63859 100644
 --- a/nss/nss_files/files-alias.c
 +++ b/nss/nss_files/files-alias.c
 @@ -42,7 +42,7 @@ internal_setent (FILE **stream)
@@ -31,7 +31,7 @@ index 14a59b4655..2c4b208b25 100644
        if (*stream == NULL)
  	status = errno == EAGAIN ? NSS_STATUS_TRYAGAIN : NSS_STATUS_UNAVAIL;
 diff --git a/nss/tst-nss-files-alias-leak.c b/nss/tst-nss-files-alias-leak.c
-index 290c5e9b4b..c2bdf52e40 100644
+index 7068de9787..71bafa0f7d 100644
 --- a/nss/tst-nss-files-alias-leak.c
 +++ b/nss/tst-nss-files-alias-leak.c
 @@ -45,27 +45,27 @@ prepare (int argc, char **argv)
@@ -80,10 +80,10 @@ index 290c5e9b4b..c2bdf52e40 100644
    FILE *fp = xfopen (path, "w");
    for (int i = 0; i < many_aliases; ++i)
 diff --git a/support/support_chroot.c b/support/support_chroot.c
-index 809342c8a2..492c656069 100644
+index 92c2a453aa..fec6b4b680 100644
 --- a/support/support_chroot.c
 +++ b/support/support_chroot.c
-@@ -52,13 +52,19 @@ support_chroot_create (struct support_chroot_configuration conf)
+@@ -52,14 +52,20 @@ support_chroot_create (struct support_chroot_configuration conf)
    xmkdir (path_etc, 0777);
    add_temp_file (path_etc);
  
@@ -98,6 +98,7 @@ index 809342c8a2..492c656069 100644
    write_file (path_etc, "host.conf", conf.host_conf, &chroot->path_host_conf);
 -  write_file (path_etc, "aliases", conf.aliases, &chroot->path_aliases);
 +  write_file (path_etc_mail, "aliases", conf.aliases, &chroot->path_aliases);
+   write_file (path_etc, "networks", conf.networks, &chroot->path_networks);
  
    free (path_etc);
 +  free (path_etc_mail);
@@ -105,5 +106,5 @@ index 809342c8a2..492c656069 100644
    /* valgrind needs a temporary directory in the chroot.  */
    {
 -- 
-2.45.2
+2.49.0
 
