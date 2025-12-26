@@ -1,7 +1,7 @@
-From 65d5aeff17f11755e20b29748636a17db103d6e1 Mon Sep 17 00:00:00 2001
+From a3f3728ca9644335998ace8091651f362b63b1c7 Mon Sep 17 00:00:00 2001
 From: Mike Frysinger <vapier@gentoo.org>
 Date: Tue, 3 Aug 2021 00:34:59 +0200
-Subject: [PATCH 1/6] Disable ldconfig during install
+Subject: [PATCH 1/8] Disable ldconfig during install
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -31,5 +31,5 @@ index cb927fb9f9..42bd789e4a 100644
  	  $(elf-objpfx)ldconfig $(addprefix -r ,$(install_root)) \
  				$(slibdir) $(libdir)
 -- 
-2.49.0
+2.51.2
 

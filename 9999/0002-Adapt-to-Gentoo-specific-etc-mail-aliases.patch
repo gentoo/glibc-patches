@@ -1,7 +1,7 @@
-From 4c2ba791aa33b1a2ebdd04febfd95e25958a6515 Mon Sep 17 00:00:00 2001
+From bfe7e98cff46af8bb257c3534cfdc368dfb6959b Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Mon, 22 Oct 2018 22:34:13 +0200
-Subject: [PATCH 2/6] Adapt to Gentoo-specific /etc/mail/aliases
+Subject: [PATCH 2/8] Adapt to Gentoo-specific /etc/mail/aliases
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -106,5 +106,5 @@ index 92c2a453aa..fec6b4b680 100644
    /* valgrind needs a temporary directory in the chroot.  */
    {
 -- 
-2.49.0
+2.51.2
 

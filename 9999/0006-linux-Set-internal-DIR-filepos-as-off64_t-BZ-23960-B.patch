@@ -1,7 +1,7 @@
-From 220967a1f6f6b50698b8c0f2bd32439171f44421 Mon Sep 17 00:00:00 2001
+From 768f4899440d7c8370899d010217003e624e8db2 Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
 Date: Mon, 13 Apr 2020 18:09:20 -0300
-Subject: [PATCH 6/6] linux: Set internal DIR filepos as off64_t (BZ #23960, BZ
+Subject: [PATCH 6/8] linux: Set internal DIR filepos as off64_t (BZ #23960, BZ
  #24050)
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -64,10 +64,10 @@ index d7567f5e86..17827176ba 100644
  # include <sys/stat.h>
  # include <stdbool.h>
 diff --git a/sysdeps/unix/sysv/linux/Makefile b/sysdeps/unix/sysv/linux/Makefile
-index 0aec783f1e..b0052a5b04 100644
+index 955d316362..4f641767f8 100644
 --- a/sysdeps/unix/sysv/linux/Makefile
 +++ b/sysdeps/unix/sysv/linux/Makefile
-@@ -603,6 +603,8 @@ sysdep_routines += \
+@@ -606,6 +606,8 @@ sysdep_routines += \
  
  tests += \
    tst-getdents64 \
@@ -575,5 +575,5 @@ index 0000000000..216ecf123f
 +
 +#include <support/test-driver.c>
 -- 
-2.49.0
+2.51.2
 

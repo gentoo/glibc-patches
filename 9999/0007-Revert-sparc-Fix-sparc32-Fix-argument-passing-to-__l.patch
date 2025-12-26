@@ -1,0 +1,44 @@
+From 5aed18efe31f30fc0dda4c000c0a199289933846 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
+Date: Mon, 1 Dec 2025 23:53:01 -0300
+Subject: [PATCH 7/8] Revert "sparc: Fix sparc32 Fix argument passing to
+ __libc_start_main (BZ 32981)"
+
+This reverts commit 8b37c99ef19c79b2bfe84be3b5a4348ef09b0d76.
+
+(cherry picked from commit 1edc76ee1fb1e9d9a300bd0439580de91bea92e8)
+---
+ sysdeps/sparc/sparc32/start.S | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/sysdeps/sparc/sparc32/start.S b/sysdeps/sparc/sparc32/start.S
+index 8393760da6..cef7c96cac 100644
+--- a/sysdeps/sparc/sparc32/start.S
++++ b/sysdeps/sparc/sparc32/start.S
+@@ -35,7 +35,6 @@
+ 
+ #include <sysdep.h>
+ 
+-#define FRAME_SIZE 104
+ 
+ 	.section ".text"
+ 	.align 4
+@@ -49,12 +48,12 @@ _start:
+   /* Terminate the stack frame, and reserve space for functions to
+      drop their arguments.  */
+ 	mov	%g0, %fp
+-	sub	%sp, FRAME_SIZE, %sp
++	sub	%sp, 6*4, %sp
+ 
+   /* Extract the arguments and environment as encoded on the stack.  The
+      argument info starts after one register window (16 words) past the SP.  */
+-	ld	[%sp+168], %o1
+-	add	%sp, 172, %o2
++	ld	[%sp+22*4], %o1
++	add	%sp, 23*4, %o2
+ 
+   /* Load the addresses of the user entry points.  */
+ #ifndef PIC
+-- 
+2.51.2
+
