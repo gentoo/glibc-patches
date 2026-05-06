@@ -132,12 +132,25 @@ git log --stat --decorate ${startpoint}..HEAD > tmp/patches/README.history || ex
 
 # package everything up
 
+echo "Packaging up ${PN}-${PV}-patches-${pver}.tar.xz"
 tar -Jcf ${PN}-${PV}-patches-${pver}.tar.xz \
 	-C tmp patches README.Gentoo.patches || exit 1
 rm -r tmp
 
 du -b *.tar.xz
 
+# sign the patchset with gpg
+
+echo "Signing ${PN}-${PV}-patches-${pver}.tar.xz with gpg"
+gpg -b -o ${PN}-${PV}-patches-${pver}.tar.xz.sig ${PN}-${PV}-patches-${pver}.tar.xz || exit 1
+
+echo "Uploading file to /pub/proj/toolchain/glibc/patches/"
+kup putraw ${PN}-${PV}-patches-${pver}.tar.xz ${PN}-${PV}-patches-${pver}.tar.xz.sig /pub/proj/toolchain/glibc/patches/ || exit 1
+
 # tag the commit
 
-git tag -s -m "Gentoo patchset ${PV}-${pver}" "gentoo/glibc-${PV}-${pver}"
+echo "Tagging the patchset commit gentoo/glibc-${PV}-${pver}"
+git tag -s -m "Gentoo patchset ${PV}-${pver}" "gentoo/glibc-${PV}-${pver}" || exit 1
+
+echo "Pushing the tag"
+git push --tags
