@@ -108,7 +108,7 @@ echo "Generated with make-tarball.sh ${mydescpatches}" >> "tmp/README.Gentoo.pat
 if [[ "${PV}" == "9999" ]]; then
 	# working with master is not supported anymore
 	echo "Patchsets for git master are not supported anymore"
-    exit 1
+	exit 1
 else
 	# release branch, start from upstream release tag
 	startpoint="glibc-${PV}"
