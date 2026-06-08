@@ -153,4 +153,4 @@ echo "Tagging the patchset commit gentoo/glibc-${PV}-${pver}"
 git tag -s -m "Gentoo patchset ${PV}-${pver}" "gentoo/glibc-${PV}-${pver}" || exit 1
 
 echo "Pushing the tag"
-git push --tags
+git push gentoo "gentoo/glibc-${PV}-${pver}"
