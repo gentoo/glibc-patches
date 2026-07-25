@@ -1,7 +1,7 @@
-From 035a3b754a61cc2917795a039f20804949590eb6 Mon Sep 17 00:00:00 2001
+From 641dff8070638924215aa856c6433ebdda02181e Mon Sep 17 00:00:00 2001
 From: Jeff Bailey <jbailey@nisa.net>
 Date: Fri, 25 Apr 2003 03:40:46 +0000
-Subject: [PATCH] hurd: enable ldconfig
+Subject: [PATCH 10/10] hurd: enable ldconfig
 
 DP: Description: Enable ldconfig and such on hurd-i386
 DP: Author: Jeff Bailey <jbailey@nisa.net>
@@ -12,31 +12,31 @@ DP: Hurd.  We should review this when the ELF standard supports runpath.
 DP: Date: 08 Apr 2003
 Imported-from: https://salsa.debian.org/glibc-team/glibc/-/blob/93d5069240943c4dcc950f6255028f7d1fcc2df0/debian/patches/hurd-i386/local-enable-ldconfig.diff
 ---
- sysdeps/mach/hurd/configure    | 3 ++-
- sysdeps/mach/hurd/configure.ac | 2 ++
- 2 files changed, 4 insertions(+), 1 deletion(-)
+ sysdeps/mach/hurd/configure    | 2 ++
+ sysdeps/mach/hurd/configure.ac | 3 +++
+ 2 files changed, 5 insertions(+)
 
 diff --git a/sysdeps/mach/hurd/configure b/sysdeps/mach/hurd/configure
-index 743bad5fcb..44ba9ff0f5 100644
+index b00af8aa8b..6a4224c68f 100644
 --- a/sysdeps/mach/hurd/configure
 +++ b/sysdeps/mach/hurd/configure
-@@ -222,4 +222,5 @@ fi
- pthread_in_libc=no
+@@ -221,3 +221,5 @@ fi
  # Hurd already provides abort implementation for the loader
  abort_in_ld=yes
--
+ 
 +# We want ldconfig
 +use_ldconfig=yes
 diff --git a/sysdeps/mach/hurd/configure.ac b/sysdeps/mach/hurd/configure.ac
-index 6d33feed0e..30fef74bed 100644
+index 7af525b06f..8be4bc25c4 100644
 --- a/sysdeps/mach/hurd/configure.ac
 +++ b/sysdeps/mach/hurd/configure.ac
-@@ -50,3 +50,5 @@ fi
- pthread_in_libc=no
+@@ -48,3 +48,6 @@ fi
+ 
  # Hurd already provides abort implementation for the loader
  abort_in_ld=yes
++
 +# We want ldconfig
 +use_ldconfig=yes
 -- 
-2.52.0
+2.54.0
 

@@ -1,7 +1,7 @@
-From dc3b6d13e68aa2c76d85b302d684e5361e0d59ae Mon Sep 17 00:00:00 2001
+From c24be46da2e28122382c3b3200094ead8b8adbd7 Mon Sep 17 00:00:00 2001
 From: Ludwig Rydberg <ludwig.rydberg@gaisler.com>
 Date: Fri, 13 Jun 2025 12:22:41 +0200
-Subject: [PATCH 8/8] sparc: Fix argument passing to __libc_start_main on
+Subject: [PATCH 08/10] sparc: Fix argument passing to __libc_start_main on
  SPARC32
 
 Use a custom __libc_start_main function so the highest stack address can
@@ -21,7 +21,7 @@ Signed-off-by: Ludwig Rydberg <ludwig.rydberg@gaisler.com>
  create mode 100644 sysdeps/unix/sysv/linux/sparc/sparc32/libc-start.c
 
 diff --git a/sysdeps/sparc/sparc32/start.S b/sysdeps/sparc/sparc32/start.S
-index cef7c96cac..9d97a2943e 100644
+index d1833355c3..edac0894f3 100644
 --- a/sysdeps/sparc/sparc32/start.S
 +++ b/sysdeps/sparc/sparc32/start.S
 @@ -64,18 +64,16 @@ _start:
@@ -82,5 +82,5 @@ index 0000000000..c24c1539a4
 +}
 +DEFINE_LIBC_START_MAIN_VERSION
 -- 
-2.51.2
+2.54.0
 

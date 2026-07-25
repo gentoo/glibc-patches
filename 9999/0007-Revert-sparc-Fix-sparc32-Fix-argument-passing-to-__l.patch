@@ -1,7 +1,7 @@
-From 5aed18efe31f30fc0dda4c000c0a199289933846 Mon Sep 17 00:00:00 2001
+From b440ad6df33530211f9372e5fe0a30c3740eeb90 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Mon, 1 Dec 2025 23:53:01 -0300
-Subject: [PATCH 7/8] Revert "sparc: Fix sparc32 Fix argument passing to
+Subject: [PATCH 07/10] Revert "sparc: Fix sparc32 Fix argument passing to
  __libc_start_main (BZ 32981)"
 
 This reverts commit 8b37c99ef19c79b2bfe84be3b5a4348ef09b0d76.
@@ -12,7 +12,7 @@ This reverts commit 8b37c99ef19c79b2bfe84be3b5a4348ef09b0d76.
  1 file changed, 3 insertions(+), 4 deletions(-)
 
 diff --git a/sysdeps/sparc/sparc32/start.S b/sysdeps/sparc/sparc32/start.S
-index 8393760da6..cef7c96cac 100644
+index 89be42dcb0..d1833355c3 100644
 --- a/sysdeps/sparc/sparc32/start.S
 +++ b/sysdeps/sparc/sparc32/start.S
 @@ -35,7 +35,6 @@
@@ -40,5 +40,5 @@ index 8393760da6..cef7c96cac 100644
    /* Load the addresses of the user entry points.  */
  #ifndef PIC
 -- 
-2.51.2
+2.54.0
 

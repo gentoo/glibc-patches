@@ -1,7 +1,7 @@
-From bfe7e98cff46af8bb257c3534cfdc368dfb6959b Mon Sep 17 00:00:00 2001
+From b3b7b6d2497b39be4bdf4ec345223380746a0091 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Andreas=20K=2E=20H=C3=BCttel?= <dilfridge@gentoo.org>
 Date: Mon, 22 Oct 2018 22:34:13 +0200
-Subject: [PATCH 2/8] Adapt to Gentoo-specific /etc/mail/aliases
+Subject: [PATCH 02/10] Adapt to Gentoo-specific /etc/mail/aliases
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -18,7 +18,7 @@ Signed-off-by: Andreas K. Hüttel <dilfridge@gentoo.org>
  3 files changed, 17 insertions(+), 11 deletions(-)
 
 diff --git a/nss/nss_files/files-alias.c b/nss/nss_files/files-alias.c
-index 297449013d..7857e63859 100644
+index 2b05cb2df6..484668535b 100644
 --- a/nss/nss_files/files-alias.c
 +++ b/nss/nss_files/files-alias.c
 @@ -42,7 +42,7 @@ internal_setent (FILE **stream)
@@ -31,7 +31,7 @@ index 297449013d..7857e63859 100644
        if (*stream == NULL)
  	status = errno == EAGAIN ? NSS_STATUS_TRYAGAIN : NSS_STATUS_UNAVAIL;
 diff --git a/nss/tst-nss-files-alias-leak.c b/nss/tst-nss-files-alias-leak.c
-index 7068de9787..71bafa0f7d 100644
+index f823c9f14c..4fae1160a6 100644
 --- a/nss/tst-nss-files-alias-leak.c
 +++ b/nss/tst-nss-files-alias-leak.c
 @@ -45,27 +45,27 @@ prepare (int argc, char **argv)
@@ -80,7 +80,7 @@ index 7068de9787..71bafa0f7d 100644
    FILE *fp = xfopen (path, "w");
    for (int i = 0; i < many_aliases; ++i)
 diff --git a/support/support_chroot.c b/support/support_chroot.c
-index 92c2a453aa..fec6b4b680 100644
+index 3c3efd1bfb..7d511557eb 100644
 --- a/support/support_chroot.c
 +++ b/support/support_chroot.c
 @@ -52,14 +52,20 @@ support_chroot_create (struct support_chroot_configuration conf)
@@ -106,5 +106,5 @@ index 92c2a453aa..fec6b4b680 100644
    /* valgrind needs a temporary directory in the chroot.  */
    {
 -- 
-2.51.2
+2.54.0
 

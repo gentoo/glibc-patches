@@ -1,7 +1,7 @@
-From db2b6dbc4bdb6cbd2cd966d676ac0b28e33831ef Mon Sep 17 00:00:00 2001
+From 5815449f119f3aff8509dcc33d24525821452b04 Mon Sep 17 00:00:00 2001
 From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
 Date: Tue, 20 Oct 2020 13:37:15 -0300
-Subject: [PATCH 4/8] linux: Use getdents64 on non-LFS readdir
+Subject: [PATCH 04/10] linux: Use getdents64 on non-LFS readdir
 
 It is similar to what non-LFS getdents do (including overflow check).
 
@@ -11,7 +11,7 @@ Checked on x86_64-linux-gnu and i686-linux-gnu.
  1 file changed, 73 insertions(+), 24 deletions(-)
 
 diff --git a/sysdeps/unix/sysv/linux/readdir.c b/sysdeps/unix/sysv/linux/readdir.c
-index abd1ec5c45..0213de925c 100644
+index 11ec2d10f4..d3fb971455 100644
 --- a/sysdeps/unix/sysv/linux/readdir.c
 +++ b/sysdeps/unix/sysv/linux/readdir.c
 @@ -20,43 +20,92 @@
@@ -132,5 +132,5 @@ index abd1ec5c45..0213de925c 100644
  
  struct dirent *
 -- 
-2.51.2
+2.54.0
 
